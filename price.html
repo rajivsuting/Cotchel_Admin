@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marketing AI Automation Price Calculator</title>
+    <style>
+      :root {
+        --primary: #4a6cfa;
+        --primary-light: #eef1ff;
+        --secondary: #292f45;
+        --light: #f8f9fc;
+        --border: #e4e7f2;
+        --text: #484b57;
+        --success: #0cbc87;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      }
+
+      body {
+        background-color: #f5f7fa;
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+      }
+
+      .calculator-wrapper {
+        background-color: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+      }
+
+      .calculator-header {
+        background-color: var(--secondary);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .calculator-header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .calculator-header p {
+        opacity: 0.8;
+        font-size: 16px;
+      }
+
+      .calculator-body {
+        padding: 40px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 40px;
+      }
+
+      .services-section {
+        flex: 1;
+        min-width: 300px;
+      }
+
+      .pricing-section {
+        flex: 1;
+        min-width: 300px;
+        background-color: var(--light);
+        border-radius: 12px;
+        padding: 30px;
+        position: relative;
+      }
+
+      h2 {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 25px;
+        color: var(--secondary);
+      }
+
+      .service-item {
+        margin-bottom: 25px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .service-item:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+      }
+
+      .service-item.selected {
+        border-color: var(--primary);
+        background-color: var(--primary-light);
+      }
+
+      .service-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .service-title {
+        font-weight: 600;
+        font-size: 17px;
+        color: var(--secondary);
+      }
+
+      .service-price {
+        font-weight: 600;
+        color: var(--primary);
+      }
+
+      .service-description {
+        font-size: 14px;
+        color: #71757d;
+        margin-bottom: 15px;
+      }
+
+      .service-features {
+        font-size: 14px;
+      }
+
+      .service-features li {
+        margin-bottom: 5px;
+        list-style-type: none;
+        position: relative;
+        padding-left: 20px;
+      }
+
+      .service-features li:before {
+        content: "✓";
+        color: var(--primary);
+        position: absolute;
+        left: 0;
+      }
+
+      .toggle-switch {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .toggle-label {
+        font-size: 14px;
+        margin-left: 10px;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 46px;
+        height: 24px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: var(--primary);
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(22px);
+      }
+
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        font-size: 15px;
+      }
+
+      .summary-divider {
+        height: 1px;
+        background-color: var(--border);
+        margin: 20px 0;
+      }
+
+      .total-price {
+        display: flex;
+        justify-content: space-between;
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--secondary);
+      }
+
+      .discount-badge {
+        background-color: var(--success);
+        color: white;
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin-left: 10px;
+      }
+
+      .save-button {
+        width: 100%;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 30px;
+        transition: all 0.3s ease;
+      }
+
+      .save-button:hover {
+        background-color: #3a5bde;
+      }
+
+      .annual-savings {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+        color: var(--success);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 0;
+        color: #a0a6b3;
+      }
+
+      @media (max-width: 768px) {
+        .calculator-body {
+          flex-direction: column;
+          padding: 20px;
+          gap: 20px;
+        }
+
+        .services-section,
+        .pricing-section {
+          min-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="calculator-wrapper">
+        <div class="calculator-header">
+          <h1>Branofy Price Calculator</h1>
+          <p>Select the services you need and get an instant price estimate</p>
+        </div>
+
+        <div class="calculator-body">
+          <div class="services-section">
+            <h2>Choose Your Services</h2>
+
+            <div
+              class="service-item"
+              data-service="social-automation"
+              data-price="199"
+            >
+              <div class="service-header">
+                <div class="service-title">Social Media Automation</div>
+                <div class="service-price">$199/mo</div>
+              </div>
+
+              <ul class="service-features">
+                <li>Content generation for 5 platforms</li>
+                <li>Auto-scheduling based on audience analytics</li>
+                <li>Performance tracking dashboard</li>
+              </ul>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" class="service-toggle" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Add to package</span>
+              </div>
+            </div>
+
+            <div
+              class="service-item"
+              data-service="email-marketing"
+              data-price="149"
+            >
+              <div class="service-header">
+                <div class="service-title">Email Marketing Automation</div>
+                <div class="service-price">$149/mo</div>
+              </div>
+
+              <ul class="service-features">
+                <li>Personalized email content generation</li>
+                <li>A/B testing with AI optimization</li>
+                <li>Smart audience segmentation</li>
+              </ul>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" class="service-toggle" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Add to package</span>
+              </div>
+            </div>
+
+            <div
+              class="service-item"
+              data-service="content-creation"
+              data-price="299"
+            >
+              <div class="service-header">
+                <div class="service-title">AI Content Creation</div>
+                <div class="service-price">$299/mo</div>
+              </div>
+
+              <ul class="service-features">
+                <li>10 SEO-optimized articles per month</li>
+                <li>Keyword research and optimization</li>
+                <li>Custom brand voice training</li>
+              </ul>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" class="service-toggle" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Add to package</span>
+              </div>
+            </div>
+
+            <div class="service-item" data-service="chatbot" data-price="179">
+              <div class="service-header">
+                <div class="service-title">AI Chatbot Integration</div>
+                <div class="service-price">$179/mo</div>
+              </div>
+
+              <ul class="service-features">
+                <li>Custom trained on your business</li>
+                <li>Multi-platform integration</li>
+                <li>Human handoff capabilities</li>
+              </ul>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" class="service-toggle" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Add to package</span>
+              </div>
+            </div>
+
+            <div class="service-item" data-service="analytics" data-price="129">
+              <div class="service-header">
+                <div class="service-title">AI Marketing Analytics</div>
+                <div class="service-price">$129/mo</div>
+              </div>
+
+              <ul class="service-features">
+                <li>Custom reporting dashboard</li>
+                <li>Predictive analytics</li>
+                <li>ROI tracking and forecasting</li>
+              </ul>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" class="service-toggle" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Add to package</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pricing-section">
+            <h2>Your Custom Package</h2>
+
+            <div id="summary-content">
+              <div class="empty-state">
+                Select services to view your custom package pricing
+              </div>
+            </div>
+
+            <div class="billing-toggle" style="margin-top: 20px; display: none">
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" id="annual-billing-toggle" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Annual billing (save 20%)</span>
+              </div>
+            </div>
+
+            <button class="save-button" style="display: none">
+              Get Started Today
+            </button>
+
+            <div class="annual-savings" style="display: none">
+              You'll save <span id="annual-savings-amount">$0</span> per year
+              with annual billing
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const serviceItems = document.querySelectorAll(".service-item");
+        const serviceToggles = document.querySelectorAll(".service-toggle");
+        const summaryContent = document.getElementById("summary-content");
+        const annualBillingToggle = document.getElementById(
+          "annual-billing-toggle"
+        );
+        const saveButton = document.querySelector(".save-button");
+        const billingToggle = document.querySelector(".billing-toggle");
+        const annualSavings = document.querySelector(".annual-savings");
+        const annualSavingsAmount = document.getElementById(
+          "annual-savings-amount"
+        );
+
+        let selectedServices = [];
+        let isAnnualBilling = false;
+
+        // Initialize event listeners for service toggles
+        serviceToggles.forEach((toggle, index) => {
+          toggle.addEventListener("change", function () {
+            const serviceItem = serviceItems[index];
+            const serviceId = serviceItem.dataset.service;
+            const servicePrice = parseFloat(serviceItem.dataset.price);
+            const serviceTitle =
+              serviceItem.querySelector(".service-title").textContent;
+
+            if (this.checked) {
+              serviceItem.classList.add("selected");
+              selectedServices.push({
+                id: serviceId,
+                title: serviceTitle,
+                price: servicePrice,
+              });
+            } else {
+              serviceItem.classList.remove("selected");
+              selectedServices = selectedServices.filter(
+                (service) => service.id !== serviceId
+              );
+            }
+
+            updatePricingSummary();
+          });
+        });
+
+        // Event listener for annual billing toggle
+        annualBillingToggle.addEventListener("change", function () {
+          isAnnualBilling = this.checked;
+          updatePricingSummary();
+        });
+
+        // Function to update pricing summary
+        function updatePricingSummary() {
+          if (selectedServices.length === 0) {
+            summaryContent.innerHTML = `
+                <div class="empty-state">
+                    Select services to view your custom package pricing
+                </div>
+            `;
+            saveButton.style.display = "none";
+            billingToggle.style.display = "none";
+            annualSavings.style.display = "none";
+            return;
+          }
+
+          saveButton.style.display = "block";
+          billingToggle.style.display = "block";
+
+          let summaryHTML = "";
+          let totalMonthlyPrice = 0;
+
+          selectedServices.forEach((service) => {
+            totalMonthlyPrice += service.price;
+            summaryHTML += `
+                <div class="summary-item">
+                    <span>${service.title}</span>
+                    <span>$${service.price}/mo</span>
+                </div>
+            `;
+          });
+
+          let finalPrice = totalMonthlyPrice;
+          let discountAmount = 0;
+
+          if (isAnnualBilling) {
+            discountAmount = totalMonthlyPrice * 0.2;
+            finalPrice = totalMonthlyPrice - discountAmount;
+            annualSavings.style.display = "block";
+            annualSavingsAmount.textContent =
+              "$" + (discountAmount * 12).toFixed(2);
+          } else {
+            annualSavings.style.display = "none";
+          }
+
+          summaryHTML += `
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+                <span>Subtotal</span>
+                <span>$${totalMonthlyPrice.toFixed(2)}/mo</span>
+            </div>
+        `;
+
+          if (isAnnualBilling) {
+            summaryHTML += `
+                <div class="summary-item">
+                    <span>Annual discount</span>
+                    <span>-$${discountAmount.toFixed(
+                      2
+                    )}/mo <span class="discount-badge">20% OFF</span></span>
+                </div>
+            `;
+          }
+
+          summaryHTML += `
+            <div class="summary-divider"></div>
+            <div class="total-price">
+                <span>Total price</span>
+                <span>$${finalPrice.toFixed(2)}/mo</span>
+            </div>
+        `;
+
+          summaryContent.innerHTML = summaryHTML;
+        }
+
+        // Save button event listener
+        saveButton.addEventListener("click", function () {
+          alert(
+            "Package configuration saved! Our team will contact you shortly."
+          );
+        });
+      });
+    </script>
+  </body>
+</html>

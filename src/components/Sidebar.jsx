@@ -113,7 +113,10 @@ const Sidebar = () => {
                   >
                     Add New
                   </Link>
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
+                  <Link
+                    to="/categories"
+                    className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md"
+                  >
                     Categories
                   </Link>
                   <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">

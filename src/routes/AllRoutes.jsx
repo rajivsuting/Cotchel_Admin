@@ -7,6 +7,7 @@ import AddProduct from "../pages/AddProduct";
 import Setting from "../pages/Setting";
 import HelpCenter from "../pages/HelpCenter";
 import Analytics from "../pages/Analytics";
+import Categories from "../pages/Categories";
 
 const AllRoutes = () => {
   return (
@@ -18,6 +19,7 @@ const AllRoutes = () => {
         <Route path="/setting" element={<Setting />} />
         <Route path="/help-center" element={<HelpCenter />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/categories" element={<Categories />} />
       </Route>
     </Routes>
   );

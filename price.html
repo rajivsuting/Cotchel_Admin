@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Marketing AI Automation Price Calculator</title>
     <style>
+      /* CSS remains the same except removing unused .annual-savings class */
       :root {
-        --primary: #4a6cfa;
-        --primary-light: #eef1ff;
+        --primary: #ff7b00;
+        --primary-light: #ffeed9;
         --secondary: #292f45;
         --light: #f8f9fc;
         --border: #e4e7f2;
@@ -250,14 +251,7 @@
       }
 
       .save-button:hover {
-        background-color: #3a5bde;
-      }
-
-      .annual-savings {
-        text-align: center;
-        margin-top: 20px;
-        font-size: 14px;
-        color: var(--success);
+        background-color: #912310;
       }
 
       .empty-state {
@@ -293,23 +287,26 @@
             <h2>Choose Your Services</h2>
 
             <div
-              class="service-item"
+              class="service-item selected"
               data-service="social-automation"
               data-price="199"
             >
               <div class="service-header">
-                <div class="service-title">Social Media Automation</div>
-                <div class="service-price">$199/mo</div>
+                <div class="service-title">AI Essentials</div>
+                <div class="service-price">₹15,998/mo</div>
               </div>
-
               <ul class="service-features">
-                <li>Content generation for 5 platforms</li>
-                <li>Auto-scheduling based on audience analytics</li>
-                <li>Performance tracking dashboard</li>
+                <li>Auto Blogger (Upto 10)</li>
+                <li>AI Planner</li>
+                <li>Auto Post (Upto 15)</li>
+                <li>Web Bot</li>
+                <li>WhatsApp Chatbot</li>
+                <li>Auto Mailer</li>
+                <li>CRM Integration</li>
               </ul>
               <div class="toggle-switch">
                 <label class="switch">
-                  <input type="checkbox" class="service-toggle" />
+                  <input type="checkbox" class="service-toggle" checked />
                   <span class="slider"></span>
                 </label>
                 <span class="toggle-label">Add to package</span>
@@ -319,17 +316,16 @@
             <div
               class="service-item"
               data-service="email-marketing"
-              data-price="149"
+              data-price="14000"
             >
               <div class="service-header">
-                <div class="service-title">Email Marketing Automation</div>
-                <div class="service-price">$149/mo</div>
+                <div class="service-title">Meta Ad Campaign Growth</div>
+                <div class="service-price">₹14,000/mo</div>
               </div>
-
               <ul class="service-features">
-                <li>Personalized email content generation</li>
-                <li>A/B testing with AI optimization</li>
-                <li>Smart audience segmentation</li>
+                <li>Meta Campaign (Upto 2)</li>
+                <li>Ad Creatives (Upto 2)</li>
+                <li>GTM & Pixel Integration</li>
               </ul>
               <div class="toggle-switch">
                 <label class="switch">
@@ -339,61 +335,44 @@
                 <span class="toggle-label">Add to package</span>
               </div>
             </div>
-
+            <div
+              class="service-item"
+              data-service="email-marketing"
+              data-price="25000"
+            >
+              <div class="service-header">
+                <div class="service-title">Meta Ad Campaign Accelerate</div>
+                <div class="service-price">₹25,000/mo</div>
+              </div>
+              <ul class="service-features">
+                <li>Meta Campaign (Upto 5)</li>
+                <li>Ad Creatives (Upto 5)</li>
+                <li>GTM & Pixel Integration</li>
+                <li>Conversion API</li>
+                <li>Landing Page</li>
+                <li>A/B Testing</li>
+                <li>Advance Ad Optimization</li>
+              </ul>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" class="service-toggle" />
+                  <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Add to package</span>
+              </div>
+            </div>
             <div
               class="service-item"
               data-service="content-creation"
-              data-price="299"
+              data-price="8999"
             >
               <div class="service-header">
-                <div class="service-title">AI Content Creation</div>
-                <div class="service-price">$299/mo</div>
+                <div class="service-title">AI Content Addon</div>
+                <div class="service-price">₹8,999/mo</div>
               </div>
-
               <ul class="service-features">
-                <li>10 SEO-optimized articles per month</li>
-                <li>Keyword research and optimization</li>
-                <li>Custom brand voice training</li>
-              </ul>
-              <div class="toggle-switch">
-                <label class="switch">
-                  <input type="checkbox" class="service-toggle" />
-                  <span class="slider"></span>
-                </label>
-                <span class="toggle-label">Add to package</span>
-              </div>
-            </div>
-
-            <div class="service-item" data-service="chatbot" data-price="179">
-              <div class="service-header">
-                <div class="service-title">AI Chatbot Integration</div>
-                <div class="service-price">$179/mo</div>
-              </div>
-
-              <ul class="service-features">
-                <li>Custom trained on your business</li>
-                <li>Multi-platform integration</li>
-                <li>Human handoff capabilities</li>
-              </ul>
-              <div class="toggle-switch">
-                <label class="switch">
-                  <input type="checkbox" class="service-toggle" />
-                  <span class="slider"></span>
-                </label>
-                <span class="toggle-label">Add to package</span>
-              </div>
-            </div>
-
-            <div class="service-item" data-service="analytics" data-price="129">
-              <div class="service-header">
-                <div class="service-title">AI Marketing Analytics</div>
-                <div class="service-price">$129/mo</div>
-              </div>
-
-              <ul class="service-features">
-                <li>Custom reporting dashboard</li>
-                <li>Predictive analytics</li>
-                <li>ROI tracking and forecasting</li>
+                <li>Auto Blogger (Upto 10)</li>
+                <li>Auto Post (Upto 10)</li>
               </ul>
               <div class="toggle-switch">
                 <label class="switch">
@@ -414,24 +393,42 @@
               </div>
             </div>
 
-            <div class="billing-toggle" style="margin-top: 20px; display: none">
-              <div class="toggle-switch">
-                <label class="switch">
-                  <input type="checkbox" id="annual-billing-toggle" />
-                  <span class="slider"></span>
-                </label>
-                <span class="toggle-label">Annual billing (save 20%)</span>
+            <div class="coupon-section" style="margin-top: 20px; display: none">
+              <div style="display: flex; gap: 10px; align-items: center">
+                <input
+                  type="text"
+                  id="coupon-input"
+                  placeholder="Enter coupon code"
+                  style="
+                    padding: 8px;
+                    border-radius: 4px;
+                    border: 1px solid var(--border);
+                    flex: 1;
+                  "
+                />
+                <button
+                  id="apply-coupon"
+                  style="
+                    padding: 8px 16px;
+                    background-color: var(--primary);
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                  "
+                >
+                  Apply
+                </button>
               </div>
+              <div
+                id="coupon-message"
+                style="font-size: 14px; margin-top: 5px"
+              ></div>
             </div>
 
             <button class="save-button" style="display: none">
               Get Started Today
             </button>
-
-            <div class="annual-savings" style="display: none">
-              You'll save <span id="annual-savings-amount">$0</span> per year
-              with annual billing
-            </div>
           </div>
         </div>
       </div>
@@ -442,20 +439,25 @@
         const serviceItems = document.querySelectorAll(".service-item");
         const serviceToggles = document.querySelectorAll(".service-toggle");
         const summaryContent = document.getElementById("summary-content");
-        const annualBillingToggle = document.getElementById(
-          "annual-billing-toggle"
-        );
         const saveButton = document.querySelector(".save-button");
-        const billingToggle = document.querySelector(".billing-toggle");
-        const annualSavings = document.querySelector(".annual-savings");
-        const annualSavingsAmount = document.getElementById(
-          "annual-savings-amount"
-        );
+        const couponSection = document.querySelector(".coupon-section");
+        const couponInput = document.getElementById("coupon-input");
+        const applyCouponButton = document.getElementById("apply-coupon");
+        const couponMessage = document.getElementById("coupon-message");
 
-        let selectedServices = [];
-        let isAnnualBilling = false;
+        let selectedServices = [
+          {
+            id: "social-automation",
+            title: "AI Essentials",
+            price: 15998,
+          },
+        ];
+        let appliedCoupon = null;
 
-        // Initialize event listeners for service toggles
+        const validCoupons = {
+          FCFS50: 0.5, // 10% off
+        };
+
         serviceToggles.forEach((toggle, index) => {
           toggle.addEventListener("change", function () {
             const serviceItem = serviceItems[index];
@@ -477,33 +479,41 @@
                 (service) => service.id !== serviceId
               );
             }
-
             updatePricingSummary();
           });
         });
 
-        // Event listener for annual billing toggle
-        annualBillingToggle.addEventListener("change", function () {
-          isAnnualBilling = this.checked;
+        applyCouponButton.addEventListener("click", function () {
+          const couponCode = couponInput.value.trim().toUpperCase();
+          if (validCoupons[couponCode]) {
+            appliedCoupon = {
+              code: couponCode,
+              discount: validCoupons[couponCode],
+            };
+            couponMessage.style.color = "var(--success)";
+            couponMessage.textContent = `Coupon "${couponCode}" applied successfully!`;
+          } else {
+            appliedCoupon = null;
+            couponMessage.style.color = "#ff4444";
+            couponMessage.textContent = "Invalid coupon code";
+          }
           updatePricingSummary();
         });
 
-        // Function to update pricing summary
         function updatePricingSummary() {
           if (selectedServices.length === 0) {
             summaryContent.innerHTML = `
-                <div class="empty-state">
-                    Select services to view your custom package pricing
-                </div>
+              <div class="empty-state">
+                  Select services to view your custom package pricing
+              </div>
             `;
             saveButton.style.display = "none";
-            billingToggle.style.display = "none";
-            annualSavings.style.display = "none";
+            couponSection.style.display = "none";
             return;
           }
 
           saveButton.style.display = "block";
-          billingToggle.style.display = "block";
+          couponSection.style.display = "block";
 
           let summaryHTML = "";
           let totalMonthlyPrice = 0;
@@ -511,42 +521,39 @@
           selectedServices.forEach((service) => {
             totalMonthlyPrice += service.price;
             summaryHTML += `
-                <div class="summary-item">
-                    <span>${service.title}</span>
-                    <span>$${service.price}/mo</span>
-                </div>
+              <div class="summary-item">
+                  <span>${service.title}</span>
+                  <span>₹${service.price}/mo</span>
+              </div>
             `;
           });
 
           let finalPrice = totalMonthlyPrice;
-          let discountAmount = 0;
+          let couponDiscount = 0;
 
-          if (isAnnualBilling) {
-            discountAmount = totalMonthlyPrice * 0.2;
-            finalPrice = totalMonthlyPrice - discountAmount;
-            annualSavings.style.display = "block";
-            annualSavingsAmount.textContent =
-              "$" + (discountAmount * 12).toFixed(2);
-          } else {
-            annualSavings.style.display = "none";
+          if (appliedCoupon) {
+            couponDiscount = finalPrice * appliedCoupon.discount;
+            finalPrice -= couponDiscount;
           }
 
           summaryHTML += `
             <div class="summary-divider"></div>
             <div class="summary-item">
                 <span>Subtotal</span>
-                <span>$${totalMonthlyPrice.toFixed(2)}/mo</span>
+                <span>₹${totalMonthlyPrice.toFixed(2)}/mo</span>
             </div>
-        `;
+          `;
 
-          if (isAnnualBilling) {
+          if (appliedCoupon) {
             summaryHTML += `
-                <div class="summary-item">
-                    <span>Annual discount</span>
-                    <span>-$${discountAmount.toFixed(
-                      2
-                    )}/mo <span class="discount-badge">20% OFF</span></span>
-                </div>
+              <div class="summary-item">
+                  <span>Coupon (${appliedCoupon.code})</span>
+                  <span>-₹${couponDiscount.toFixed(
+                    2
+                  )}/mo <span class="discount-badge">${
+              appliedCoupon.discount * 100
+            }% OFF</span></span>
+              </div>
             `;
           }
 
@@ -554,19 +561,20 @@
             <div class="summary-divider"></div>
             <div class="total-price">
                 <span>Total price</span>
-                <span>$${finalPrice.toFixed(2)}/mo</span>
+                <span>₹${finalPrice.toFixed(2)}/mo</span>
             </div>
-        `;
+          `;
 
           summaryContent.innerHTML = summaryHTML;
         }
 
-        // Save button event listener
         saveButton.addEventListener("click", function () {
           alert(
             "Package configuration saved! Our team will contact you shortly."
           );
         });
+
+        updatePricingSummary();
       });
     </script>
   </body>

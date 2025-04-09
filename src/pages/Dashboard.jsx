@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Bell,
   Search,
@@ -15,133 +15,48 @@ import {
   CheckCircle,
   Menu,
 } from "lucide-react";
+import useDashboard from "../hooks/useDashboard";
 
 const Dashboard = () => {
-  // Sample data for stats
-  const stats = [
-    {
-      title: "Total Sales",
-      value: "₹24,780",
-      change: "+12.5%",
-      positive: true,
-      icon: <CreditCard size={20} className="text-white" />,
-    },
-    {
-      title: "New Customers",
-      value: "573",
-      change: "+8.2%",
-      positive: true,
-      icon: <Users size={20} className="text-white" />,
-    },
-    {
-      title: "Total Orders",
-      value: "1,258",
-      change: "+14.6%",
-      positive: true,
-      icon: <ShoppingBag size={20} className="text-white" />,
-    },
-    {
-      title: "Product Visits",
-      value: "9,254",
-      change: "+22.1%",
-      positive: true,
-      icon: <TrendingUp size={20} className="text-white" />,
-    },
-  ];
-
-  // Sample data for recent orders
-  const recentOrders = [
-    {
-      id: "#ORD-7352",
-      customer: "Priya Sharma",
-      date: "Mar 8, 2025",
-      status: "Delivered",
-      amount: "₹1,250",
-      product: "Premium Sneakers",
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-    {
-      id: "#ORD-7351",
-      customer: "Rahul Patel",
-      date: "Mar 7, 2025",
-      status: "Processing",
-      amount: "₹2,459",
-      product: "Wireless Headphones",
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-    {
-      id: "#ORD-7350",
-      customer: "Ananya Singh",
-      date: "Mar 7, 2025",
-      status: "Shipped",
-      amount: "₹895",
-      product: "Designer Watch",
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-    {
-      id: "#ORD-7349",
-      customer: "Vikram Malhotra",
-      date: "Mar 6, 2025",
-      status: "Pending",
-      amount: "₹3,522",
-      product: "Smartphone",
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-  ];
-
-  // Sample data for top selling products
-  const topProducts = [
-    {
-      name: "Premium Wireless Earbuds",
-      sold: 245,
-      revenue: "₹73,500",
-      stock: 54,
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-    {
-      name: 'Ultra HD Smart TV (55")',
-      sold: 132,
-      revenue: "₹396,000",
-      stock: 23,
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-    {
-      name: "Designer Leather Handbag",
-      sold: 189,
-      revenue: "₹94,500",
-      stock: 42,
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-    {
-      name: "Professional Camera Kit",
-      sold: 87,
-      revenue: "₹348,000",
-      stock: 15,
-      image:
-        "https://cotchel-images.s3.ap-south-1.amazonaws.com/products/2c10f45b-f376-4104-a8a7-0caa38a746c6_phone.jpeg",
-    },
-  ];
-
-  // Order status counts for visualization
-  const orderStatus = [
-    { status: "Pending", count: 24, color: "bg-yellow-500" },
-    { status: "Processing", count: 38, color: "bg-blue-500" },
-    { status: "Shipped", count: 53, color: "bg-indigo-500" },
-    { status: "Delivered", count: 187, color: "bg-green-500" },
-    { status: "Cancelled", count: 12, color: "bg-red-500" },
-  ];
+  const { dashboardData, loading, error } = useDashboard();
 
   // Theme color - dark navy (#0c0b45)
   const themeColor = "#0c0b45";
   const themeLighter = "#1c1a7a";
   const themeLight = "#e8e8f0";
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0c0b45]"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-red-500 text-center">
+          <p className="text-xl font-semibold mb-2">Error Loading Dashboard</p>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { stats, orderStatus, recentOrders, topProducts } = dashboardData;
+
+  // Order status counts for visualization
+  const totalOrders = orderStatus.reduce(
+    (sum, status) => sum + status.count,
+    0
+  );
+
+  // Calculate total sales from top products
+  const totalTopProductsSales = topProducts.reduce(
+    (sum, product) => sum + product.sold,
+    0
+  );
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -160,18 +75,6 @@ const Dashboard = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {/* <div className="relative hidden md:block">
-                <input
-                  type="text"
-                  placeholder="Search products, orders, customers..."
-                  className="bg-white/20 text-white placeholder-white/70 border border-white/30 rounded-full py-2 pl-10 pr-4 w-64 focus:outline-none focus:ring-2 focus:ring-white/50"
-                />
-                <Search
-                  size={18}
-                  className="absolute left-3 top-2.5 text-white/70"
-                />
-              </div> */}
-
               <button className="p-2 rounded-full hover:bg-white/10 relative">
                 <Bell size={20} />
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></span>
@@ -193,12 +96,6 @@ const Dashboard = () => {
               <p className="mt-2 text-gray-600">
                 Here's what's happening with your platform today.
               </p>
-              {/* <button
-                style={{ backgroundColor: themeColor }}
-                className="mt-4 hover:bg-opacity-90 text-white px-4 py-2 rounded-lg shadow-md transition duration-200"
-              >
-                View Reports
-              </button> */}
             </div>
           </div>
         </div>
@@ -219,7 +116,7 @@ const Dashboard = () => {
                     <p className="text-white text-sm font-medium">
                       {stat.title}
                     </p>
-                    {stat.icon}
+                    {getStatIcon(stat.title)}
                   </div>
                 </div>
                 <div className="px-6 py-4">
@@ -275,14 +172,16 @@ const Dashboard = () => {
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
                       className={`h-2.5 rounded-full ${item.color}`}
-                      style={{ width: `${(item.count / 314) * 100}%` }}
+                      style={{ width: `${(item.count / totalOrders) * 100}%` }}
                     ></div>
                   </div>
                 </div>
               ))}
             </div>
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-500">Total Orders: 314</p>
+              <p className="text-sm text-gray-500">
+                Total Orders: {totalOrders}
+              </p>
               <button
                 style={{ color: themeColor }}
                 className="mt-3 hover:underline text-sm font-medium"
@@ -306,25 +205,33 @@ const Dashboard = () => {
             <div className="grid grid-cols-2 gap-4">
               <FulfillmentCard
                 title="Ready to Ship"
-                count="18"
+                count={
+                  orderStatus.find((s) => s.status === "Pending")?.count || 0
+                }
                 icon={<Package size={24} className="text-amber-500" />}
                 color="bg-amber-100 text-amber-800"
               />
               <FulfillmentCard
                 title="In Transit"
-                count="32"
+                count={
+                  orderStatus.find((s) => s.status === "Shipped")?.count || 0
+                }
                 icon={<Truck size={24} className="text-blue-500" />}
                 color="bg-blue-100 text-blue-800"
               />
               <FulfillmentCard
                 title="Delivered Today"
-                count="24"
+                count={
+                  orderStatus.find((s) => s.status === "Delivered")?.count || 0
+                }
                 icon={<CheckCircle size={24} className="text-green-500" />}
                 color="bg-green-100 text-green-800"
               />
               <FulfillmentCard
                 title="Returns"
-                count="7"
+                count={
+                  orderStatus.find((s) => s.status === "Cancelled")?.count || 0
+                }
                 icon={<Box size={24} className="text-red-500" />}
                 color="bg-red-100 text-red-800"
               />
@@ -346,32 +253,22 @@ const Dashboard = () => {
               >
                 <Chart size={18} style={{ color: themeColor }} />
               </span>
-              Top Selling Categories
+              Top Selling Products
             </h3>
             <div className="space-y-4">
-              <CategoryItem
-                name="Microprocessors"
-                percentage={38}
-                color={`bg-${themeColor}`}
-                themeColor={themeColor}
-              />
-              <CategoryItem
-                name="Chip"
-                percentage={25}
-                color={`bg-${themeLighter}`}
-                themeColor={themeLighter}
-              />
-              <CategoryItem
-                name="Graphic Card"
-                percentage={18}
-                color="bg-blue-500"
-              />
-              <CategoryItem
-                name="Transistor"
-                percentage={12}
-                color="bg-pink-500"
-              />
-              <CategoryItem name="Others" percentage={7} color="bg-gray-500" />
+              {topProducts.map((product, index) => (
+                <CategoryItem
+                  key={index}
+                  name={product.name}
+                  percentage={
+                    totalTopProductsSales > 0
+                      ? (product.sold / totalTopProductsSales) * 100
+                      : 0
+                  }
+                  color={`bg-${themeColor}`}
+                  themeColor={themeColor}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -396,7 +293,7 @@ const Dashboard = () => {
                 style={{ backgroundColor: themeLight, color: themeColor }}
                 className="text-xs font-semibold px-2 py-1 rounded-full"
               >
-                24 new orders today
+                {recentOrders.length} new orders
               </span>
             </div>
           </div>
@@ -634,6 +531,22 @@ const Dashboard = () => {
   );
 };
 
+// Helper function to get stat icon
+function getStatIcon(title) {
+  switch (title) {
+    case "Total Sales":
+      return <CreditCard size={20} className="text-white" />;
+    case "New Customers":
+      return <Users size={20} className="text-white" />;
+    case "Total Orders":
+      return <ShoppingBag size={20} className="text-white" />;
+    case "Product Visits":
+      return <TrendingUp size={20} className="text-white" />;
+    default:
+      return null;
+  }
+}
+
 // Component for fulfillment status cards
 const FulfillmentCard = ({ title, count, icon, color }) => {
   return (
@@ -647,17 +560,24 @@ const FulfillmentCard = ({ title, count, icon, color }) => {
 
 // Component for category items
 const CategoryItem = ({ name, percentage, color, themeColor }) => {
+  // Ensure percentage is a valid number and not infinity
+  const safePercentage = isFinite(percentage)
+    ? Math.min(Math.round(percentage), 100)
+    : 0;
+
   return (
     <div>
       <div className="flex justify-between mb-1">
         <span className="text-sm font-medium text-gray-700">{name}</span>
-        <span className="text-sm font-medium text-gray-700">{percentage}%</span>
+        <span className="text-sm font-medium text-gray-700">
+          {safePercentage}%
+        </span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2.5">
         <div
           className={`h-2.5 rounded-full`}
           style={{
-            width: `${percentage}%`,
+            width: `${safePercentage}%`,
             backgroundColor: themeColor || color,
           }}
         ></div>

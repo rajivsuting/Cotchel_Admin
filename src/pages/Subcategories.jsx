@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, memo } from "react";
 import axios from "axios";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -15,53 +15,46 @@ import {
   X,
 } from "lucide-react";
 
-const CategoryRow = memo(({ category, onDelete }) => (
+const SubcategoryRow = memo(({ subcategory, onDelete }) => (
   <tr
     className="hover:bg-gray-50 transition-opacity duration-200 cursor-pointer"
     style={{ opacity: 0, animation: "fadeIn 0.3s forwards" }}
   >
     <td className="px-6 py-4 whitespace-nowrap">
-      <Link to={`/categories/${category._id}`} className="flex items-center">
-        <div className="h-10 w-10 rounded-md bg-gray-200 flex items-center justify-center mr-3">
-          {category.icon ? (
-            <img
-              src={category.icon}
-              alt={category.name}
-              className="h-10 w-10 rounded-md object-cover"
-            />
-          ) : (
-            <span className="text-gray-500 text-sm font-medium">
-              {category.name.charAt(0).toUpperCase()}
-            </span>
-          )}
-        </div>
+      <Link
+        to={`/subcategories/${subcategory._id}`}
+        className="flex items-center"
+      >
         <div>
           <div className="text-sm font-medium text-gray-900">
-            {category.name}
+            {subcategory.name}
           </div>
           <div className="text-xs text-gray-500">
-            ID: {category._id?.substring(0, 8)}
+            ID: {subcategory._id?.substring(0, 8)}
           </div>
         </div>
       </Link>
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-      <Link to={`/categories/${category._id}`}>
-        {category.subCategories?.length || 0}
+      <Link to={`/categories/${subcategory.category?._id}`}>
+        {subcategory.category?.name || "N/A"}
       </Link>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+      {subcategory.productCount || 0}
     </td>
     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
       <div className="flex justify-end items-center space-x-2">
         <button
           className="p-1 rounded-md text-gray-500 hover:text-[#0c0b45] hover:bg-gray-100 transition-colors cursor-pointer"
-          aria-label={`Edit ${category.name}`}
+          aria-label={`Edit ${subcategory.name}`}
         >
           <Edit size={18} />
         </button>
         <button
           className="p-1 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 transition-colors cursor-pointer"
-          onClick={() => onDelete(category._id)}
-          aria-label={`Delete ${category.name}`}
+          onClick={() => onDelete(subcategory._id)}
+          aria-label={`Delete ${subcategory.name}`}
         >
           <Trash2 size={18} />
         </button>
@@ -81,7 +74,8 @@ const styleSheet = document.createElement("style");
 styleSheet.textContent = styles;
 document.head.appendChild(styleSheet);
 
-const Categories = () => {
+const Subcategories = () => {
+  const [subcategories, setSubcategories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -89,14 +83,15 @@ const Categories = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalCategories, setTotalCategories] = useState(0);
-  const [limit] = useState(6);
+  const [totalSubcategories, setTotalSubcategories] = useState(0);
+  const [limit] = useState(10);
   const [sortBy, setSortBy] = useState("createdAt");
   const [order, setOrder] = useState("asc");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryIcon, setNewCategoryIcon] = useState(null);
-  const [addingCategory, setAddingCategory] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [newSubcategoryCategory, setNewSubcategoryCategory] = useState("");
+  const [addingSubcategory, setAddingSubcategory] = useState(false);
   const [addError, setAddError] = useState(null);
   const [addSuccess, setAddSuccess] = useState(false);
 
@@ -109,8 +104,21 @@ const Categories = () => {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch categories
+  // Fetch categories for dropdown
   const fetchCategories = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/categories/all"
+      );
+      setCategories(response.data.data || []);
+      console.log(response.data.data);
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    }
+  }, []);
+
+  // Fetch subcategories
+  const fetchSubcategories = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
@@ -119,77 +127,73 @@ const Categories = () => {
         ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(sortBy && { sortBy }),
         ...(order && { order }),
+        ...(categoryFilter && { category: categoryFilter }),
       };
 
       const response = await axios.get(
-        "http://localhost:5000/api/categories/all",
+        "http://localhost:5000/api/subcategories/all",
         { params }
       );
 
       const { data, pagination } = response.data;
-      setCategories(data || []);
-      setTotalCategories(pagination?.totalCategories || 0);
+      setSubcategories(data || []);
+      setTotalSubcategories(pagination?.totalSubcategories || 0);
       setTotalPages(pagination?.totalPages || 1);
       setError(null);
     } catch (err) {
-      setError("Failed to fetch categories. Please try again later.");
+      setError("Failed to fetch subcategories. Please try again later.");
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedSearchTerm, sortBy, order, limit]);
+  }, [currentPage, debouncedSearchTerm, sortBy, order, limit, categoryFilter]);
 
   useEffect(() => {
+    fetchSubcategories();
     fetchCategories();
-  }, [fetchCategories]);
+  }, [fetchSubcategories, fetchCategories]);
 
-  const handleAddCategory = async (e) => {
+  const handleAddSubcategory = async (e) => {
     e.preventDefault();
-    if (!newCategoryName.trim()) return;
+    if (!newSubcategoryName.trim() || !newSubcategoryCategory) return;
 
-    setAddingCategory(true);
+    setAddingSubcategory(true);
     setAddError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("name", newCategoryName);
-      if (newCategoryIcon) {
-        formData.append("icon", newCategoryIcon);
-      }
-
       const response = await axios.post(
-        "http://localhost:5000/api/categories/create",
-        formData,
+        "http://localhost:5000/api/subcategories/create",
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          name: newSubcategoryName,
+          category: newSubcategoryCategory,
         }
       );
 
-      setCategories((prev) => [...prev, response.data.data]);
-      setNewCategoryName("");
-      setNewCategoryIcon(null);
+      setSubcategories((prev) => [...prev, response.data.data]);
+      setNewSubcategoryName("");
+      setNewSubcategoryCategory("");
       setShowAddForm(false);
       setAddSuccess(true);
       setTimeout(() => setAddSuccess(false), 3000);
-      fetchCategories();
+      fetchSubcategories();
     } catch (err) {
       setAddError(
         err.response?.data?.message ||
-          "Failed to add category. Please try again."
+          "Failed to add subcategory. Please try again."
       );
       console.error(err);
     } finally {
-      setAddingCategory(false);
+      setAddingSubcategory(false);
     }
   };
 
-  const handleDeleteCategory = async (id) => {
+  const handleDeleteSubcategory = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/categories/${id}`);
-      setCategories((prev) => prev.filter((category) => category._id !== id));
-      fetchCategories();
+      await axios.delete(`http://localhost:5000/api/subcategories/${id}`);
+      setSubcategories((prev) => prev.filter((sub) => sub._id !== id));
+      fetchSubcategories();
     } catch (err) {
-      setError("Failed to delete category. Please try again.");
+      setError("Failed to delete subcategory. Please try again.");
       console.error(err);
     }
   };
@@ -202,13 +206,6 @@ const Categories = () => {
       setOrder("desc");
     }
     setCurrentPage(1);
-  };
-
-  const handleIconChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewCategoryIcon(file);
-    }
   };
 
   if (error && !loading) {
@@ -224,8 +221,8 @@ const Categories = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Categories</h1>
-            <p className="text-gray-600">Manage your product categories</p>
+            <h1 className="text-2xl font-bold text-gray-800">Subcategories</h1>
+            <p className="text-gray-600">Manage your product subcategories</p>
           </div>
           <div className="flex gap-3">
             <button
@@ -241,7 +238,7 @@ const Categories = () => {
                 showAddForm ? "bg-gray-200" : "bg-[#14136a]"
               } transition-colors cursor-pointer`}
               aria-label={
-                showAddForm ? "Cancel add category" : "Add new category"
+                showAddForm ? "Cancel add subcategory" : "Add new subcategory"
               }
             >
               {showAddForm ? (
@@ -252,7 +249,7 @@ const Categories = () => {
               ) : (
                 <>
                   <Plus size={16} className="mr-2" />
-                  Add Category
+                  Add Subcategory
                 </>
               )}
             </button>
@@ -262,14 +259,14 @@ const Categories = () => {
         {addSuccess && (
           <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
             <Plus size={20} className="mr-2" />
-            <p>Category added successfully!</p>
+            <p>Subcategory added successfully!</p>
           </div>
         )}
 
         {showAddForm && (
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4 border-b border-gray-100 pb-2">
-              Add New Category
+              Add New Subcategory
             </h2>
             {addError && (
               <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
@@ -277,59 +274,60 @@ const Categories = () => {
                 <p>{addError}</p>
               </div>
             )}
-            <form onSubmit={handleAddCategory} className="space-y-4">
+            <form onSubmit={handleAddSubcategory} className="space-y-4">
               <div>
                 <label
-                  htmlFor="categoryName"
+                  htmlFor="subcategoryName"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Category Name
+                  Subcategory Name
                 </label>
                 <input
-                  id="categoryName"
+                  id="subcategoryName"
                   type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  value={newSubcategoryName}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all"
-                  placeholder="Enter category name"
+                  placeholder="Enter subcategory name"
                   required
-                  aria-label="Category name"
+                  aria-label="Subcategory name"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Category name must be unique and will be displayed to
-                  customers.
+                  Subcategory name must be unique within its category.
                 </p>
               </div>
               <div>
                 <label
-                  htmlFor="categoryIcon"
+                  htmlFor="subcategoryCategory"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Category Icon
+                  Category
                 </label>
-                <input
-                  id="categoryIcon"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleIconChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#0c0b45] file:text-white hover:file:bg-[#14136a]"
-                  aria-label="Upload category icon"
-                />
+                <select
+                  id="subcategoryCategory"
+                  value={newSubcategoryCategory}
+                  onChange={(e) => setNewSubcategoryCategory(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 appearance-none transition-all cursor-pointer"
+                  required
+                  aria-label="Select category"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
                 <p className="mt-1 text-xs text-gray-500">
-                  Recommended dimensions: 40x40 pixels (PNG, JPG, or SVG).
+                  Select the parent category for this subcategory.
                 </p>
-                {newCategoryIcon && (
-                  <p className="mt-1 text-xs text-gray-600">
-                    Selected: {newCategoryIcon.name}
-                  </p>
-                )}
               </div>
               <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => {
-                    setNewCategoryName("");
-                    setNewCategoryIcon(null);
+                    setNewSubcategoryName("");
+                    setNewSubcategoryCategory("");
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer"
                   aria-label="Clear form"
@@ -338,15 +336,21 @@ const Categories = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={addingCategory || !newCategoryName.trim()}
+                  disabled={
+                    addingSubcategory ||
+                    !newSubcategoryName.trim() ||
+                    !newSubcategoryCategory
+                  }
                   className={`px-4 py-2 text-sm font-medium text-white bg-[#0c0b45] rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0c0b45] focus:ring-offset-2 transition-colors cursor-pointer ${
-                    addingCategory || !newCategoryName.trim()
+                    addingSubcategory ||
+                    !newSubcategoryName.trim() ||
+                    !newSubcategoryCategory
                       ? "opacity-70 cursor-not-allowed"
                       : ""
                   }`}
-                  aria-label="Create category"
+                  aria-label="Create subcategory"
                 >
-                  {addingCategory ? "Creating..." : "Create Category"}
+                  {addingSubcategory ? "Creating..." : "Create Subcategory"}
                 </button>
               </div>
             </form>
@@ -359,11 +363,11 @@ const Categories = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search categories..."
+                  placeholder="Search subcategories..."
                   className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  aria-label="Search categories"
+                  aria-label="Search subcategories"
                 />
                 <Search
                   size={16}
@@ -373,9 +377,19 @@ const Categories = () => {
               <div className="relative">
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 appearance-none transition-all cursor-pointer"
-                  aria-label="Filter categories"
+                  value={categoryFilter}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  aria-label="Filter by category"
                 >
                   <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
                 <Filter
                   size={16}
@@ -400,10 +414,13 @@ const Categories = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Subcategory
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Category
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Subcategories
+                    Products
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -415,22 +432,10 @@ const Categories = () => {
                   ? Array.from({ length: 5 }).map((_, index) => (
                       <tr key={index}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Skeleton
-                              circle
-                              width={40}
-                              height={40}
-                              className="mr-3"
-                            />
-                            <div>
-                              <Skeleton width={120} height={16} />
-                              <Skeleton
-                                width={80}
-                                height={12}
-                                className="mt-2"
-                              />
-                            </div>
-                          </div>
+                          <Skeleton width={120} height={16} />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Skeleton width={100} height={16} />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Skeleton width={60} height={16} />
@@ -440,18 +445,18 @@ const Categories = () => {
                         </td>
                       </tr>
                     ))
-                  : categories.map((category) => (
-                      <CategoryRow
-                        key={category._id}
-                        category={category}
-                        onDelete={handleDeleteCategory}
+                  : subcategories.map((subcategory) => (
+                      <SubcategoryRow
+                        key={subcategory._id}
+                        subcategory={subcategory}
+                        onDelete={handleDeleteSubcategory}
                       />
                     ))}
               </tbody>
             </table>
           </div>
 
-          {!loading && categories.length === 0 && (
+          {!loading && subcategories.length === 0 && (
             <div className="text-center py-12">
               <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <svg
@@ -496,23 +501,23 @@ const Categories = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">
-                No categories found
+                No subcategories found
               </h3>
               <p className="mt-1 text-xs text-gray-500">
-                Try adjusting your search or add a new category.
+                Try adjusting your search or add a new subcategory.
               </p>
               <button
                 onClick={() => setShowAddForm(true)}
                 className="mt-4 px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors flex items-center mx-auto cursor-pointer"
-                aria-label="Add new category"
+                aria-label="Add new subcategory"
               >
                 <Plus size={16} className="mr-2" />
-                Add Category
+                Add Subcategory
               </button>
             </div>
           )}
 
-          {!loading && categories.length > 0 && (
+          {!loading && subcategories.length > 0 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
               <div className="text-sm text-gray-600">
                 Showing{" "}
@@ -521,10 +526,10 @@ const Categories = () => {
                 </span>{" "}
                 to{" "}
                 <span className="font-medium">
-                  {Math.min(currentPage * limit, totalCategories)}
+                  {Math.min(currentPage * limit, totalSubcategories)}
                 </span>{" "}
-                of <span className="font-medium">{totalCategories}</span>{" "}
-                categories
+                of <span className="font-medium">{totalSubcategories}</span>{" "}
+                subcategories
               </div>
               <div className="flex space-x-1">
                 <button
@@ -538,11 +543,6 @@ const Categories = () => {
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
                   aria-label="Previous page"
-                  tabIndex={0}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" &&
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
                 >
                   <ChevronLeft size={18} />
                 </button>
@@ -560,10 +560,6 @@ const Categories = () => {
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                       aria-label={`Page ${page}`}
-                      tabIndex={0}
-                      onKeyPress={(e) =>
-                        e.key === "Enter" && setCurrentPage(page)
-                      }
                     >
                       {page}
                     </button>
@@ -580,11 +576,6 @@ const Categories = () => {
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
                   aria-label="Next page"
-                  tabIndex={0}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" &&
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
                 >
                   <ChevronRight size={18} />
                 </button>
@@ -597,4 +588,4 @@ const Categories = () => {
   );
 };
 
-export default Categories;
+export default Subcategories;

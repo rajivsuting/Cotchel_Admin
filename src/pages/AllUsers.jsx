@@ -17,7 +17,7 @@ const SkeletonRow = () => (
   <tr className="animate-pulse opacity-50">
     <td className="px-6 py-4 whitespace-nowrap">
       <div className="flex items-center">
-        <div className="h-10 w-10 rounded-md bg-gray-200 mr-3"></div>
+        <div className="h-10 w-10 rounded-full bg-gray-200 mr-3"></div>
         <div>
           <div className="h-4 w-32 bg-gray-200 rounded"></div>
           <div className="h-3 w-20 bg-gray-200 rounded mt-2"></div>
@@ -33,12 +33,6 @@ const SkeletonRow = () => (
     <td className="px-6 py-4 whitespace-nowrap">
       <div className="h-4 w-16 bg-gray-200 rounded"></div>
     </td>
-    <td className="px-6 py-4 whitespace-nowrap">
-      <div className="h-4 w-12 bg-gray-200 rounded"></div>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap">
-      <div className="h-4 w-20 bg-gray-200 rounded"></div>
-    </td>
     <td className="px-6 py-4 whitespace-nowrap text-right">
       <div className="flex justify-end space-x-2">
         <div className="h-5 w-5 bg-gray-200 rounded"></div>
@@ -48,11 +42,11 @@ const SkeletonRow = () => (
   </tr>
 );
 
-const ProductRow = memo(({ product, onDelete }) => {
+const UserRow = memo(({ user, onDelete }) => {
   const navigate = useNavigate();
 
   const handleRowClick = () => {
-    navigate(`/products/${product.id}`);
+    navigate(`/users/${user.id}`);
   };
 
   return (
@@ -63,45 +57,35 @@ const ProductRow = memo(({ product, onDelete }) => {
     >
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
-          <img
-            src={product.image || "/placeholder-image.jpg"}
-            alt={product.name}
-            className="h-10 w-10 rounded-md object-cover mr-3"
-          />
+          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+            <span className="text-gray-600 font-medium">
+              {user.fullName?.charAt(0)}
+            </span>
+          </div>
           <div>
             <div className="text-sm font-medium text-gray-900">
-              {product.name}
+              {user.fullName}
             </div>
-            <div className="text-xs text-gray-500">
-              SKU: {product?.sku || "N/A"}
-            </div>
+            <div className="text-xs text-gray-500">{user.email}</div>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {product.category}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {product.seller}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-        ${product.price.toFixed(2)}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {product.stock}
+        {user.role}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <span
           className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-            product.status === "Active"
+            user.isEmailVerified
               ? "bg-green-100 text-green-800"
-              : product.status === "Low Stock"
-              ? "bg-yellow-100 text-yellow-800"
               : "bg-red-100 text-red-800"
           }`}
         >
-          {product.status}
+          {user.isEmailVerified ? "Verified" : "Unverified"}
         </span>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+        {new Date(user.createdAt).toLocaleDateString()}
       </td>
       <td
         className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
@@ -110,14 +94,14 @@ const ProductRow = memo(({ product, onDelete }) => {
         <div className="flex justify-end items-center space-x-2">
           <button
             className="p-1 rounded-md text-gray-500 hover:text-[#0c0b45] hover:bg-gray-100 transition-colors cursor-pointer"
-            aria-label={`Edit ${product.name}`}
+            aria-label={`Edit ${user.fullName}`}
           >
             <Edit size={18} />
           </button>
           <button
             className="p-1 rounded-md text-gray-500 hover:text-red-600 hover:bg-gray-100 transition-colors cursor-pointer"
-            onClick={() => onDelete(product.id)}
-            aria-label={`Delete ${product.name}`}
+            onClick={() => onDelete(user.id)}
+            aria-label={`Delete ${user.fullName}`}
           >
             <Trash2 size={18} />
           </button>
@@ -138,20 +122,19 @@ const styleSheet = document.createElement("style");
 styleSheet.textContent = styles;
 document.head.appendChild(styleSheet);
 
-const AllProducts = () => {
-  const [products, setProducts] = useState([]);
+const AllUsers = () => {
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [emailVerifiedFilter, setEmailVerifiedFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [limit] = useState(6);
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [order, setOrder] = useState("desc");
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [limit] = useState(10);
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // Debounce search term
   useEffect(() => {
@@ -161,52 +144,38 @@ const AllProducts = () => {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch products
-  const fetchProducts = useCallback(async () => {
+  // Fetch users
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
         page: currentPage,
         limit,
         ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
-        ...(categoryFilter && { category: categoryFilter }),
-        ...(statusFilter && { status: statusFilter }),
-        ...(sortBy && { sortBy }),
-        ...(order && { order }),
+        ...(roleFilter && { role: roleFilter }),
+        ...(emailVerifiedFilter && { isEmailVerified: emailVerifiedFilter }),
+        sort: sortOrder,
       };
 
-      console.log(params);
+      const response = await axios.get("http://localhost:5000/api/auth/all", {
+        params,
+      });
 
-      const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/products",
-        {
-          params,
-        }
-      );
-
-      const mappedProducts = response.data.products.map((product) => ({
-        id: product._id,
-        name: product.title,
-        category: product.category?.name || "Uncategorized",
-        price: product.price,
-        stock: product.quantityAvailable,
-        sku: product.sku,
-        seller: product.user?.fullName || "Unknown",
-        status:
-          product.quantityAvailable > 50
-            ? "Active"
-            : product.quantityAvailable > 0
-            ? "Low Stock"
-            : "Out of Stock",
-        image: product.featuredImage,
+      const mappedUsers = response.data.data.users.map((user) => ({
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        createdAt: user.createdAt,
       }));
 
-      setProducts(mappedProducts);
-      setTotalPages(response.data.totalPages);
-      setTotalProducts(response.data.totalProducts);
+      setUsers(mappedUsers);
+      setTotalPages(response.data.data.totalPages);
+      setTotalUsers(response.data.data.totalUsers);
       setError(null);
     } catch (err) {
-      setError("Failed to fetch products. Please try again later.");
+      setError("Failed to fetch users. Please try again later.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -214,40 +183,29 @@ const AllProducts = () => {
   }, [
     currentPage,
     debouncedSearchTerm,
-    categoryFilter,
-    statusFilter,
-    sortBy,
-    order,
+    roleFilter,
+    emailVerifiedFilter,
+    sortOrder,
     limit,
   ]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetchUsers();
+  }, [fetchUsers]);
 
-  const handleDeleteProduct = (id) => {
-    setProducts(products.filter((product) => product.id !== id));
-    fetchProducts();
+  const handleDeleteUser = (id) => {
+    setUsers(users.filter((user) => user.id !== id));
+    fetchUsers();
   };
 
-  const handleSort = (field) => {
-    if (sortBy === field) {
-      setOrder(order === "desc" ? "asc" : "desc");
-    } else {
-      setSortBy(field);
-      setOrder("desc");
-    }
+  const handleSort = () => {
+    setSortOrder(sortOrder === "desc" ? "asc" : "desc");
     setCurrentPage(1);
   };
 
-  const categories = useMemo(
-    () => ["", ...new Set(products.map((p) => p.category))],
-    [products]
-  );
-  const statuses = useMemo(
-    () => ["", "Active", "Low Stock", "Out of Stock"],
-    []
-  );
+  // Static list of roles (replace with your actual roles or fetch from API)
+  const roles = useMemo(() => ["", "Buyer", "Seller"], []);
+  const emailVerifiedOptions = useMemo(() => ["", "true", "false"], []);
 
   if (error && !loading) {
     return (
@@ -262,38 +220,38 @@ const AllProducts = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Products</h1>
-            <p className="text-gray-600">Manage your product inventory</p>
+            <h1 className="text-2xl font-bold text-gray-800">Users</h1>
+            <p className="text-gray-600">Manage your user accounts</p>
           </div>
           <div className="flex gap-3">
             <button
               className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 flex items-center transition-colors cursor-pointer"
-              aria-label="Export products"
+              aria-label="Export users"
             >
               <Download size={16} className="mr-2" />
               Export
             </button>
             <button
               className="flex items-center px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors cursor-pointer"
-              aria-label="Add new product"
+              aria-label="Add new user"
             >
               <Plus size={16} className="mr-2" />
-              Add Product
+              Add User
             </button>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-4 border-b border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2 relative">
                 <input
                   type="text"
-                  placeholder="Search products..."
+                  placeholder="Search users by name or email..."
                   className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  aria-label="Search products"
+                  aria-label="Search users"
                 />
                 <Search
                   size={16}
@@ -303,16 +261,16 @@ const AllProducts = () => {
               <div className="relative">
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 appearance-none transition-all cursor-pointer"
-                  value={categoryFilter}
+                  value={roleFilter}
                   onChange={(e) => {
-                    setCategoryFilter(e.target.value);
+                    setRoleFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  aria-label="Filter by category"
+                  aria-label="Filter by role"
                 >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category || "All Categories"}
+                  {roles.map((role) => (
+                    <option key={role} value={role}>
+                      {role || "All Roles"}
                     </option>
                   ))}
                 </select>
@@ -324,33 +282,21 @@ const AllProducts = () => {
               <div className="relative">
                 <select
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 appearance-none transition-all cursor-pointer"
-                  value={statusFilter}
+                  value={emailVerifiedFilter}
                   onChange={(e) => {
-                    setStatusFilter(e.target.value);
+                    setEmailVerifiedFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  aria-label="Filter by status"
+                  aria-label="Filter by email verification"
                 >
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status || "All Statuses"}
-                    </option>
-                  ))}
+                  <option value="">All Statuses</option>
+                  <option value="true">Verified</option>
+                  <option value="false">Unverified</option>
                 </select>
                 <Filter
                   size={16}
                   className="absolute right-3 top-2.5 text-gray-400 pointer-events-none"
                 />
-              </div>
-              <div>
-                <button
-                  onClick={() => handleSort("price")}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 transition-colors cursor-pointer"
-                  aria-label="Sort by price"
-                >
-                  <ArrowUpDown size={16} className="mr-2" />
-                  <span>Sort by Price</span>
-                </button>
               </div>
             </div>
           </div>
@@ -360,30 +306,24 @@ const AllProducts = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
+                    User
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
+                    Role
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Seller
+                    Email Status
                   </th>
                   <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort("price")}
+                    onClick={handleSort}
                     role="button"
                     tabIndex={0}
-                    aria-label="Sort by price"
-                    onKeyPress={(e) => e.key === "Enter" && handleSort("price")}
+                    aria-label="Sort by date"
+                    onKeyPress={(e) => e.key === "Enter" && handleSort()}
                   >
-                    Price
+                    Created At
                     <ArrowUpDown size={14} className="inline ml-1" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stock
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -395,18 +335,18 @@ const AllProducts = () => {
                   ? Array.from({ length: limit }).map((_, index) => (
                       <SkeletonRow key={index} />
                     ))
-                  : products.map((product) => (
-                      <ProductRow
-                        key={product.id}
-                        product={product}
-                        onDelete={handleDeleteProduct}
+                  : users.map((user) => (
+                      <UserRow
+                        key={user.id}
+                        user={user}
+                        onDelete={handleDeleteUser}
                       />
                     ))}
               </tbody>
             </table>
           </div>
 
-          {!loading && products.length === 0 && (
+          {!loading && users.length === 0 && (
             <div className="text-center py-12">
               <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <svg
@@ -417,41 +357,23 @@ const AllProducts = () => {
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M21 7V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V7C3 4 4.5 2 8 2H16C19.5 2 21 4 21 7Z"
+                    d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z"
                     stroke="#9CA3AF"
                     strokeWidth="1.5"
-                    strokeMiterlimit="10"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
-                    d="M14.5 4.5V6.5C14.5 7.6 15.4 8.5 16.5 8.5H18.5"
+                    d="M4 20C4 16.27 7.13 14 12 14C16.87 14 20 16.27 20 20"
                     stroke="#9CA3AF"
                     strokeWidth="1.5"
-                    strokeMiterlimit="10"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M8 13H12"
-                    stroke="#9CA3AF"
-                    strokeWidth="1.5"
-                    strokeMiterlimit="10"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M8 17H16"
-                    stroke="#9CA3AF"
-                    strokeWidth="1.5"
-                    strokeMiterlimit="10"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900">
-                No products found
+                No users found
               </h3>
               <p className="mt-1 text-gray-500">
                 Try adjusting your search or filter to find what you're looking
@@ -459,14 +381,14 @@ const AllProducts = () => {
               </p>
               <button
                 className="mt-4 px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors cursor-pointer"
-                aria-label="Add new product"
+                aria-label="Add new user"
               >
-                Add Product
+                Add User
               </button>
             </div>
           )}
 
-          {!loading && products.length > 0 && (
+          {!loading && users.length > 0 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
               <div className="text-sm text-gray-600">
                 Showing{" "}
@@ -475,9 +397,9 @@ const AllProducts = () => {
                 </span>{" "}
                 to{" "}
                 <span className="font-medium">
-                  {Math.min(currentPage * limit, totalProducts)}
+                  {Math.min(currentPage * limit, totalUsers)}
                 </span>{" "}
-                of <span className="font-medium">{totalProducts}</span> products
+                of <span className="font-medium">{totalUsers}</span> users
               </div>
               <div className="flex space-x-1">
                 <button
@@ -550,4 +472,4 @@ const AllProducts = () => {
   );
 };
 
-export default AllProducts;
+export default AllUsers;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Home,
   ShoppingBag,
@@ -6,35 +6,48 @@ import {
   Users,
   BarChart2,
   Settings,
-  Tag,
   HelpCircle,
   ChevronDown,
   LogOut,
   Menu,
-  Grid,
   Truck,
   DollarSign,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
+import useSocket from "../hooks/useSocket"; // Import the Socket.IO hook
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [expanded, setExpanded] = useState({
-    products: false,
-    orders: false,
-    customers: false,
+  const [expanded, setExpanded] = useState(() => {
+    const saved = localStorage.getItem("sidebarExpanded");
+    console.log("Loaded from localStorage:", saved);
+    return saved
+      ? JSON.parse(saved)
+      : { products: false, orders: false, customers: false };
   });
 
+  // Use Socket.IO hook for admin notifications
+  const { notifications } = useSocket(true); // isAdmin = true
+  const unreadCount = notifications.filter((notif) => !notif.read).length; // Count unread notifications
+
+  useEffect(() => {
+    console.log("Saving to localStorage:", expanded);
+    localStorage.setItem("sidebarExpanded", JSON.stringify(expanded));
+  }, [expanded]);
+
   const toggleExpand = (section) => {
-    setExpanded({
-      ...expanded,
-      [section]: !expanded[section],
+    setExpanded((prev) => {
+      const newState = { ...prev, [section]: !prev[section] };
+      console.log("Toggled:", section, "New state:", newState);
+      return newState;
     });
   };
 
+  const activeClassName = "bg-[#1d1c5e] text-white";
+  const inactiveClassName = "text-gray-300 hover:bg-[#1d1c5e] hover:text-white";
+
   return (
-    <div className="flex h-screen ">
-      {/* Sidebar */}
+    <div className="flex h-screen">
       <div
         className={`bg-[#0c0b45] flex flex-col transition-all duration-300 ${
           collapsed ? "w-16" : "w-64"
@@ -58,18 +71,22 @@ const Sidebar = () => {
           <nav className="px-2">
             {/* Dashboard */}
             <div className="mb-1 group">
-              <Link
+              <NavLink
                 to="/"
-                className="flex items-center px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2 rounded-md transition-colors ${
+                    isActive ? activeClassName : inactiveClassName
+                  }`
+                }
               >
-                <Home size={20} className="text-gray-300 min-w-5" />
+                <Home size={20} className="min-w-5" />
                 {!collapsed && <span className="ml-3">Dashboard</span>}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                     Dashboard
                   </div>
                 )}
-              </Link>
+              </NavLink>
             </div>
 
             {/* Products Section */}
@@ -101,27 +118,54 @@ const Sidebar = () => {
 
               {expanded.products && !collapsed && (
                 <div className="pl-9 pr-2 py-1">
-                  <Link
+                  <NavLink
                     to="/all-products"
-                    className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
                   >
                     All Products
-                  </Link>
-                  <Link
+                  </NavLink>
+                  <NavLink
                     to="/add-product"
-                    className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
                   >
                     Add New
-                  </Link>
-                  <Link
+                  </NavLink>
+                  <NavLink
                     to="/categories"
-                    className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
                   >
                     Categories
-                  </Link>
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
-                    Inventory
-                  </Link>
+                  </NavLink>
+                  <NavLink
+                    to="/subcategories"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
+                  >
+                    Sub Categories
+                  </NavLink>
                 </div>
               )}
             </div>
@@ -138,26 +182,14 @@ const Sidebar = () => {
                   <ShoppingBag size={20} className="text-gray-300 min-w-5" />
                   {!collapsed && <span className="ml-3">Orders</span>}
                 </div>
-                <div className="flex items-center">
-                  {!collapsed && (
-                    <>
-                      {/* <span className="inline-flex items-center justify-center h-5 min-w-5 px-1 text-xs font-medium bg-red-500 text-white rounded-full mr-2">
-                        8
-                      </span> */}
-                      <ChevronDown
-                        size={16}
-                        className={`text-gray-400 transform transition-transform ${
-                          expanded.orders ? "rotate-180" : ""
-                        }`}
-                      />
-                    </>
-                  )}
-                  {collapsed && (
-                    <span className="absolute top-0 right-1 inline-flex items-center justify-center h-4 w-4 text-xs font-medium bg-red-500 text-white rounded-full">
-                      8
-                    </span>
-                  )}
-                </div>
+                {!collapsed && (
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transform transition-transform ${
+                      expanded.orders ? "rotate-180" : ""
+                    }`}
+                  />
+                )}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                     Orders
@@ -167,18 +199,18 @@ const Sidebar = () => {
 
               {expanded.orders && !collapsed && (
                 <div className="pl-9 pr-2 py-1">
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
+                  <NavLink
+                    to="/all-orders"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
+                  >
                     All Orders
-                  </Link>
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
-                    Pending
-                  </Link>
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
-                    Processing
-                  </Link>
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
-                    Completed
-                  </Link>
+                  </NavLink>
                 </div>
               )}
             </div>
@@ -193,7 +225,7 @@ const Sidebar = () => {
               >
                 <div className="flex items-center">
                   <Users size={20} className="text-gray-300 min-w-5" />
-                  {!collapsed && <span className="ml-3">Customers</span>}
+                  {!collapsed && <span className="ml-3">Users</span>}
                 </div>
                 {!collapsed && (
                   <ChevronDown
@@ -205,93 +237,105 @@ const Sidebar = () => {
                 )}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
-                    Customers
+                    Users
                   </div>
                 )}
               </button>
 
               {expanded.customers && !collapsed && (
                 <div className="pl-9 pr-2 py-1">
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
-                    All Customers
-                  </Link>
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
-                    Segments
-                  </Link>
-                  <Link className="block py-2 px-2 text-sm text-gray-400 hover:text-white hover:bg-[#1d1c5e] rounded-md">
-                    Reviews
-                  </Link>
+                  <NavLink
+                    to="/all-users"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
+                  >
+                    All Users
+                  </NavLink>
+                  <NavLink
+                    to="/approvals"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md relative ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
+                  >
+                    <span>Pending Approvals</span>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </NavLink>
                 </div>
               )}
             </div>
 
-            {/* Marketing */}
-            {/* <div className="mb-1 group">
-              <Link className="flex items-center px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors">
-                <Tag size={20} className="text-gray-300 min-w-5" />
-                {!collapsed && <span className="ml-3">Marketing</span>}
-                {collapsed && (
-                  <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
-                    Marketing
-                  </div>
-                )}
-              </Link>
-            </div> */}
-
             {/* Analytics */}
             <div className="mb-1 group">
-              <Link
+              <NavLink
                 to="/analytics"
-                className="flex items-center px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2 rounded-md transition-colors ${
+                    isActive ? activeClassName : inactiveClassName
+                  }`
+                }
               >
-                <BarChart2 size={20} className="text-gray-300 min-w-5" />
+                <BarChart2 size={20} className="min-w-5" />
                 {!collapsed && <span className="ml-3">Analytics</span>}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                     Analytics
                   </div>
                 )}
-              </Link>
+              </NavLink>
             </div>
 
             {/* Payments */}
             <div className="mb-1 group">
-              <Link className="flex items-center px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors">
-                <DollarSign size={20} className="text-gray-300 min-w-5" />
+              <NavLink
+                to="/payments"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2 rounded-md transition-colors ${
+                    isActive ? activeClassName : inactiveClassName
+                  }`
+                }
+              >
+                <DollarSign size={20} className="min-w-5" />
                 {!collapsed && <span className="ml-3">Payments</span>}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                     Payments
                   </div>
                 )}
-              </Link>
+              </NavLink>
             </div>
 
             {/* Shipping */}
             <div className="mb-1 group">
-              <Link className="flex items-center px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors">
-                <Truck size={20} className="text-gray-300 min-w-5" />
+              <NavLink
+                to="/shipping"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2 rounded-md transition-colors ${
+                    isActive ? activeClassName : inactiveClassName
+                  }`
+                }
+              >
+                <Truck size={20} className="min-w-5" />
                 {!collapsed && <span className="ml-3">Shipping</span>}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                     Shipping
                   </div>
                 )}
-              </Link>
+              </NavLink>
             </div>
-
-            {/* Apps */}
-            {/* <div className="mb-1 group">
-              <Link className="flex items-center px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors">
-                <Grid size={20} className="text-gray-300 min-w-5" />
-                {!collapsed && <span className="ml-3">Apps</span>}
-                {collapsed && (
-                  <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
-                    Apps
-                  </div>
-                )}
-              </Link>
-            </div> */}
           </nav>
         </div>
 
@@ -299,33 +343,41 @@ const Sidebar = () => {
         <div className="mt-auto border-t border-[#1d1c5e] pt-2">
           <nav className="px-2">
             <div className="mb-1 group">
-              <Link
+              <NavLink
                 to="/setting"
-                className="flex items-center px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-2 rounded-md transition-colors ${
+                    isActive ? activeClassName : inactiveClassName
+                  }`
+                }
               >
-                <Settings size={20} className="text-gray-300 min-w-5" />
+                <Settings size={20} className="min-w-5" />
                 {!collapsed && <span className="ml-3">Settings</span>}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                     Settings
                   </div>
                 )}
-              </Link>
+              </NavLink>
             </div>
 
             <div className="mb-1 group">
-              <Link
+              <NavLink
                 to="/help-center"
-                className="flex items-center px-3 py-3 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors"
+                className={({ isActive }) =>
+                  `flex items-center px-3 py-3 rounded-md transition-colors ${
+                    isActive ? activeClassName : inactiveClassName
+                  }`
+                }
               >
-                <HelpCircle size={20} className="text-gray-300 min-w-5" />
+                <HelpCircle size={20} className="min-w-5" />
                 {!collapsed && <span className="ml-3">Help Center</span>}
                 {collapsed && (
                   <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                     Help Center
                   </div>
                 )}
-              </Link>
+              </NavLink>
             </div>
           </nav>
 

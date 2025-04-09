@@ -157,9 +157,12 @@ const AllUsers = () => {
         sort: sortOrder,
       };
 
-      const response = await axios.get("http://localhost:5000/api/auth/all", {
-        params,
-      });
+      const response = await axios.get(
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/auth/all",
+        {
+          params,
+        }
+      );
 
       const mappedUsers = response.data.data.users.map((user) => ({
         id: user._id,

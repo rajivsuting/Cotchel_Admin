@@ -108,7 +108,7 @@ const Subcategories = () => {
   const fetchCategories = useCallback(async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/categories/all"
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/categories/all"
       );
       setCategories(response.data.data || []);
       console.log(response.data.data);
@@ -131,7 +131,7 @@ const Subcategories = () => {
       };
 
       const response = await axios.get(
-        "http://localhost:5000/api/subcategories/all",
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/all",
         { params }
       );
 
@@ -162,7 +162,7 @@ const Subcategories = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/subcategories/create",
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/create",
         {
           name: newSubcategoryName,
           category: newSubcategoryCategory,
@@ -189,7 +189,9 @@ const Subcategories = () => {
 
   const handleDeleteSubcategory = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/subcategories/${id}`);
+      await axios.delete(
+        `https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/${id}`
+      );
       setSubcategories((prev) => prev.filter((sub) => sub._id !== id));
       fetchSubcategories();
     } catch (err) {

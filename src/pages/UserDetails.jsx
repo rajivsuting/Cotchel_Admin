@@ -31,7 +31,7 @@ const UserDetails = () => {
 
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:5000/api/auth/get/${id}`
+          `https://cotchel-server-tvye7.ondigitalocean.app/api/auth/get/${id}`
         );
         console.log("API Response:", response);
 
@@ -78,7 +78,9 @@ const UserDetails = () => {
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/auth/get/${id}`);
+        await axios.delete(
+          `https://cotchel-server-tvye7.ondigitalocean.app/api/auth/get/${id}`
+        );
         window.location.href = "/users";
       } catch (err) {
         setError(
@@ -95,7 +97,7 @@ const UserDetails = () => {
     if (window.confirm(`Are you sure you want to ${action} this user?`)) {
       try {
         const response = await axios.put(
-          `http://localhost:5000/api/auth/deactivate/${id}`,
+          `https://cotchel-server-tvye7.ondigitalocean.app/api/auth/deactivate/${id}`,
           { isActive: !user.isActive }
         );
         if (response.status === 200) {

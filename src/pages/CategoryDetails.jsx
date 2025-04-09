@@ -23,7 +23,7 @@ const CategoryDetails = () => {
     const fetchCategory = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/categories/get/${id}`
+          `https://cotchel-server-tvye7.ondigitalocean.app/api/categories/get/${id}`
         );
         setCategory(response.data.data.category);
         setProductCount(response.data.data.productCount);

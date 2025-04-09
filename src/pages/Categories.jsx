@@ -122,7 +122,7 @@ const Categories = () => {
       };
 
       const response = await axios.get(
-        "http://localhost:5000/api/categories/all",
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/categories/all",
         { params }
       );
 
@@ -158,7 +158,7 @@ const Categories = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/categories/create",
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/categories/create",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -185,7 +185,9 @@ const Categories = () => {
 
   const handleDeleteCategory = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/categories/${id}`);
+      await axios.delete(
+        `https://cotchel-server-tvye7.ondigitalocean.app/api/categories/${id}`
+      );
       setCategories((prev) => prev.filter((category) => category._id !== id));
       fetchCategories();
     } catch (err) {

@@ -5,6 +5,7 @@ const useDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     stats: [],
     orderStatus: [],
+    categoryStats: [],
     recentOrders: [],
     topProducts: [],
   });
@@ -44,39 +45,51 @@ const useDashboard = () => {
               positive: (response.data.ordersChange || 0) >= 0,
             },
             {
-              title: "Product Visits",
-              value: response.data.productVisits || 0,
-              change: `${response.data.visitsChange || 0}%`,
-              positive: (response.data.visitsChange || 0) >= 0,
+              title: "Total Revenue",
+              value: `₹${(response.data.totalSales || 0).toLocaleString()}`,
+              change: `${response.data.salesChange || 0}%`,
+              positive: (response.data.salesChange || 0) >= 0,
             },
           ],
           orderStatus: [
             {
               status: "Pending",
-              count: response.data.orderStatus?.pending || 0,
+              count: response.data.orderStatus?.Pending || 0,
               color: "bg-yellow-500",
             },
             {
               status: "Processing",
-              count: response.data.orderStatus?.processing || 0,
+              count: response.data.orderStatus?.Processing || 0,
               color: "bg-blue-500",
             },
             {
               status: "Shipped",
-              count: response.data.orderStatus?.shipped || 0,
+              count: response.data.orderStatus?.Shipped || 0,
               color: "bg-indigo-500",
             },
             {
               status: "Delivered",
-              count: response.data.orderStatus?.delivered || 0,
+              count: response.data.orderStatus?.Delivered || 0,
+              color: "bg-green-500",
+            },
+            {
+              status: "Completed",
+              count: response.data.orderStatus?.Completed || 0,
               color: "bg-green-500",
             },
             {
               status: "Cancelled",
-              count: response.data.orderStatus?.cancelled || 0,
+              count: response.data.orderStatus?.Cancelled || 0,
               color: "bg-red-500",
             },
           ],
+          categoryStats: (response.data.categoryStats || []).map(
+            (category) => ({
+              name: category.name || "Unknown Category",
+              totalSales: `₹${(category.totalSales || 0).toLocaleString()}`,
+              orderCount: category.orderCount || 0,
+            })
+          ),
           recentOrders: (response.data.recentOrders || []).map((order) => ({
             id: order._id || "Unknown",
             product: order.products?.[0]?.product?.title || "Unknown Product",

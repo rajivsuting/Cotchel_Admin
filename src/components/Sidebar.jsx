@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import useSocket from "../hooks/useSocket"; // Import the Socket.IO hook
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "react-toastify";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -29,6 +31,7 @@ const Sidebar = () => {
   // Use Socket.IO hook for admin notifications
   const { notifications } = useSocket(true); // isAdmin = true
   const unreadCount = notifications.filter((notif) => !notif.read).length; // Count unread notifications
+  const { logout, admin } = useAuth();
 
   useEffect(() => {
     console.log("Saving to localStorage:", expanded);
@@ -36,11 +39,20 @@ const Sidebar = () => {
   }, [expanded]);
 
   const toggleExpand = (section) => {
-    setExpanded((prev) => {
-      const newState = { ...prev, [section]: !prev[section] };
-      console.log("Toggled:", section, "New state:", newState);
-      return newState;
-    });
+    setExpanded((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.error("Failed to logout. Please try again.");
+      console.error("Logout error:", error);
+    }
   };
 
   const activeClassName = "bg-[#1d1c5e] text-white";
@@ -381,38 +393,35 @@ const Sidebar = () => {
             </div>
           </nav>
 
-          {/* User info */}
-          {!collapsed && (
-            <div className="px-4 py-4 border-t border-[#1d1c5e] mt-2">
-              <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white font-medium text-sm">
-                  SU
-                </div>
-                <div className="ml-3">
-                  <div className="text-sm font-medium text-white">
-                    Store User
+          {/* User info and Logout */}
+          <div className="px-4 py-4 border-t border-[#1d1c5e] mt-2">
+            <div className="flex items-center justify-between">
+              {!collapsed && (
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white font-medium text-sm">
+                    {(admin?.fullName || admin?.name)?.charAt(0) || "A"}
                   </div>
-                  <div className="text-xs text-gray-400">admin@store.com</div>
+                  <div className="ml-3">
+                    <div className="text-sm font-medium text-white">
+                      {admin?.fullName || admin?.name || "Admin"}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {admin?.email || "admin@cotchel.com"}
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-auto">
-                  <button className="text-gray-400 hover:text-white">
-                    <LogOut size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {collapsed && (
-            <div className="py-4 flex justify-center border-t border-[#1d1c5e] mt-2 group">
-              <button className="text-gray-400 hover:text-white">
+              )}
+              <button
+                onClick={handleLogout}
+                className="group flex items-center justify-center p-2 rounded-md transition-colors text-gray-300 hover:bg-[#1d1c5e] hover:text-white"
+              >
                 <LogOut size={20} />
                 <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
                   Logout
                 </div>
               </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

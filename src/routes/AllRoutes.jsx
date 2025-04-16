@@ -20,11 +20,21 @@ import AdminDashboard from "../components/AdminDashboard";
 import PendingApprovals from "../pages/PendingApprovals";
 import Notifications from "../pages/Notifications";
 import Payments from "../pages/Payments";
+import ProtectedRoute from "../components/ProtectedRoute";
+import Signin from "../pages/Signin";
 
 const AllRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<SidebarLayout sidebar={<Sidebar />} />}>
+      <Route path="/signin" element={<Signin />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <SidebarLayout sidebar={<Sidebar />} />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<Dashboard />} />
         <Route path="/all-products" element={<AllProducts />} />
         <Route path="/products/:id" element={<ProductDetails />} />

@@ -14,6 +14,11 @@ import {
   Truck,
   CheckCircle,
   Menu,
+  Star,
+  AlertTriangle,
+  Shirt,
+  Watch,
+  Footprints,
 } from "lucide-react";
 import useDashboard from "../hooks/useDashboard";
 
@@ -191,56 +196,83 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Fulfillment Status */}
+          {/* Popular Categories */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
               <span
                 style={{ backgroundColor: themeLight }}
                 className="p-1 rounded-md mr-2"
               >
-                <Truck size={18} style={{ color: themeColor }} />
+                <TrendingUp size={18} style={{ color: themeColor }} />
               </span>
-              Fulfillment Status
+              Popular Categories
             </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <FulfillmentCard
-                title="Ready to Ship"
-                count={
-                  orderStatus.find((s) => s.status === "Pending")?.count || 0
-                }
-                icon={<Package size={24} className="text-amber-500" />}
-                color="bg-amber-100 text-amber-800"
-              />
-              <FulfillmentCard
-                title="In Transit"
-                count={
-                  orderStatus.find((s) => s.status === "Shipped")?.count || 0
-                }
-                icon={<Truck size={24} className="text-blue-500" />}
-                color="bg-blue-100 text-blue-800"
-              />
-              <FulfillmentCard
-                title="Delivered Today"
-                count={
-                  orderStatus.find((s) => s.status === "Delivered")?.count || 0
-                }
-                icon={<CheckCircle size={24} className="text-green-500" />}
-                color="bg-green-100 text-green-800"
-              />
-              <FulfillmentCard
-                title="Returns"
-                count={
-                  orderStatus.find((s) => s.status === "Cancelled")?.count || 0
-                }
-                icon={<Box size={24} className="text-red-500" />}
-                color="bg-red-100 text-red-800"
-              />
+            <div className="space-y-4">
+              {dashboardData?.categoryStats?.length > 0 ? (
+                dashboardData.categoryStats.map((category, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-start space-x-3 p-3 ${
+                      index === 0
+                        ? "bg-blue-50"
+                        : index === 1
+                        ? "bg-purple-50"
+                        : "bg-green-50"
+                    } rounded-lg`}
+                  >
+                    <div className="flex-shrink-0">
+                      <div
+                        className={`w-10 h-10 rounded-full ${
+                          index === 0
+                            ? "bg-blue-100"
+                            : index === 1
+                            ? "bg-purple-100"
+                            : "bg-green-100"
+                        } flex items-center justify-center`}
+                      >
+                        {index === 0 ? (
+                          <Shirt size={16} className="text-blue-600" />
+                        ) : index === 1 ? (
+                          <Watch size={16} className="text-purple-600" />
+                        ) : (
+                          <Footprints size={16} className="text-green-600" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-800">
+                          {category.name}
+                        </p>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-600">Total Sales</p>
+                          <p className="text-lg font-semibold text-gray-800">
+                            {category.totalSales}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600">Orders</p>
+                          <p className="text-lg font-semibold text-gray-800">
+                            {category.orderCount}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  No category data available
+                </div>
+              )}
             </div>
             <button
-              style={{ backgroundColor: themeColor }}
-              className="mt-6 w-full py-2 text-white rounded-lg text-sm font-medium transition duration-200 hover:bg-opacity-90"
+              style={{ color: themeColor }}
+              className="mt-4 text-sm font-medium hover:underline"
             >
-              Process Orders
+              View all categories →
             </button>
           </div>
 
@@ -540,7 +572,7 @@ function getStatIcon(title) {
       return <Users size={20} className="text-white" />;
     case "Total Orders":
       return <ShoppingBag size={20} className="text-white" />;
-    case "Product Visits":
+    case "Total Revenue":
       return <TrendingUp size={20} className="text-white" />;
     default:
       return null;

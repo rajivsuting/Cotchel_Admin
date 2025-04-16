@@ -23,6 +23,7 @@ import Notifications from "../pages/Notifications";
 import Payments from "../pages/Payments";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Signin from "../pages/Signin";
+import OrderDetails from "../pages/OrderDetails";
 
 const AllRoutes = () => {
   return (
@@ -56,6 +57,8 @@ const AllRoutes = () => {
         <Route path="/approvals" element={<PendingApprovals />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/payments" element={<Payments />} />
+
+        <Route path="/orders/:orderId" element={<OrderDetails />} />
       </Route>
     </Routes>
   );

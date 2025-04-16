@@ -4,6 +4,8 @@ import AllRoutes from "./routes/AllRoutes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider } from "./contexts/AuthContext";
+import axios from "axios";
+axios.defaults.withCredentials = true;
 
 function App() {
   return (

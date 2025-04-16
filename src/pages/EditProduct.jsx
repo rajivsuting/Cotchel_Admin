@@ -186,7 +186,7 @@ const EditProduct = () => {
 
     try {
       const response = await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/upload",
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/image/upload",
         formData,
         {
           headers: {
@@ -195,7 +195,7 @@ const EditProduct = () => {
         }
       );
 
-      const newImages = response.data.urls;
+      const newImages = response.data.imageUrls;
       setProduct((prev) => ({
         ...prev,
         images: [...prev.images, ...newImages],
@@ -216,7 +216,7 @@ const EditProduct = () => {
 
     try {
       const response = await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/upload",
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/image/upload-file",
         formData,
         {
           headers: {
@@ -225,7 +225,7 @@ const EditProduct = () => {
         }
       );
 
-      const newFiles = response.data.urls;
+      const newFiles = response.data.fileUrls;
       setProduct((prev) => ({
         ...prev,
         fileAttachments: [...prev.fileAttachments, ...newFiles],
@@ -241,7 +241,7 @@ const EditProduct = () => {
     setSaving(true);
 
     try {
-      await axios.patch(
+      await axios.put(
         `https://cotchel-server-tvye7.ondigitalocean.app/api/products/${id}`,
         product
       );
@@ -697,54 +697,122 @@ const EditProduct = () => {
             >
               Images
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[product.featuredImage, ...product.images].map(
-                (image, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={image}
-                      alt={`Product ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (index === 0) {
-                          setProduct((prev) => ({
-                            ...prev,
-                            featuredImage: "",
-                          }));
-                        } else {
-                          setProduct((prev) => ({
-                            ...prev,
-                            images: prev.images.filter(
-                              (_, i) => i !== index - 1
-                            ),
-                          }));
+            <div className="space-y-4">
+              {/* Featured Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Featured Image
+                </label>
+                <div className="relative">
+                  {product.featuredImage ? (
+                    <div className="relative group">
+                      <img
+                        src={product.featuredImage}
+                        alt="Featured"
+                        className="w-full h-64 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setProduct((prev) => ({ ...prev, featuredImage: "" }))
                         }
-                      }}
-                      className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )
-              )}
-              <label className="relative flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors duration-200 cursor-pointer">
-                <div className="text-center">
-                  <Upload size={24} className="mx-auto text-gray-400" />
-                  <span className="mt-2 block text-sm text-gray-600">
-                    Upload Image
-                  </span>
+                        className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors duration-200 cursor-pointer">
+                      <div className="text-center">
+                        <Upload size={24} className="mx-auto text-gray-400" />
+                        <span className="mt-2 block text-sm text-gray-600">
+                          Upload Featured Image
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const formData = new FormData();
+                            formData.append("images", file);
+                            try {
+                              const response = await axios.post(
+                                "https://cotchel-server-tvye7.ondigitalocean.app/api/image/upload",
+                                formData,
+                                {
+                                  headers: {
+                                    "Content-Type": "multipart/form-data",
+                                  },
+                                }
+                              );
+                              if (
+                                response.data.imageUrls &&
+                                response.data.imageUrls.length > 0
+                              ) {
+                                setProduct((prev) => ({
+                                  ...prev,
+                                  featuredImage: response.data.imageUrls[0],
+                                }));
+                              }
+                            } catch (err) {
+                              setError("Failed to upload featured image.");
+                              console.error(err);
+                            }
+                          }
+                        }}
+                        className="hidden"
+                        accept="image/*"
+                      />
+                    </label>
+                  )}
                 </div>
-                <input
-                  type="file"
-                  onChange={handleImageUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  accept="image/*"
-                  multiple
-                />
-              </label>
+              </div>
+
+              {/* Additional Images */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Additional Images
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {product.images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={image}
+                        alt={`Product ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProduct((prev) => ({
+                            ...prev,
+                            images: prev.images.filter((_, i) => i !== index),
+                          }));
+                        }}
+                        className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="relative flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors duration-200 cursor-pointer">
+                    <div className="text-center">
+                      <Upload size={24} className="mx-auto text-gray-400" />
+                      <span className="mt-2 block text-sm text-gray-600">
+                        Add Image
+                      </span>
+                    </div>
+                    <input
+                      type="file"
+                      onChange={handleImageUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      accept="image/*"
+                      multiple
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 

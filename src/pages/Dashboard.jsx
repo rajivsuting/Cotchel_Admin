@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Bell,
   Search,
@@ -21,14 +21,24 @@ import {
   Footprints,
 } from "lucide-react";
 import useDashboard from "../hooks/useDashboard";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const { dashboardData, loading, error } = useDashboard();
+  const { admin } = useAuth();
+  const navigate = useNavigate();
+
+  console.log("Current admin state:", admin); // Debug log
 
   // Theme color - dark navy (#0c0b45)
   const themeColor = "#0c0b45";
   const themeLighter = "#1c1a7a";
   const themeLight = "#e8e8f0";
+
+  const handleViewProduct = (productId) => {
+    navigate(`/products/${productId}`);
+  };
 
   if (loading) {
     return (
@@ -63,6 +73,9 @@ const Dashboard = () => {
     0
   );
 
+  // Get the display name for the welcome message
+  const displayName = admin?.fullName || admin?.name || "Admin";
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
@@ -96,7 +109,7 @@ const Dashboard = () => {
           <div className="md:flex">
             <div className="p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-800">
-                Welcome back, Admin!
+                Welcome back, {displayName}!
               </h2>
               <p className="mt-2 text-gray-600">
                 Here's what's happening with your platform today.
@@ -448,14 +461,6 @@ const Dashboard = () => {
                 </span>
                 Top Selling Products
               </h3>
-              <select
-                style={{ borderColor: themeLight, color: themeColor }}
-                className="text-sm border rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2"
-              >
-                <option>This Week</option>
-                <option>This Month</option>
-                <option>This Year</option>
-              </select>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -531,17 +536,11 @@ const Dashboard = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
+                        onClick={() => handleViewProduct(product.id)}
                         style={{ color: themeColor }}
                         className="hover:underline font-medium"
                       >
-                        View
-                      </button>
-                      <span className="mx-2 text-gray-300">|</span>
-                      <button
-                        style={{ color: themeColor }}
-                        className="hover:underline font-medium"
-                      >
-                        Edit
+                        View Details
                       </button>
                     </td>
                   </tr>

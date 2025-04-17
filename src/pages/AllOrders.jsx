@@ -11,6 +11,8 @@ import {
   Clock,
   AlertCircle,
   Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const statusColors = {
@@ -50,19 +52,31 @@ const AllOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [limit] = useState(10);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        setLoading(true);
         const response = await axios.get(
           "https://cotchel-server-tvye7.ondigitalocean.app/api/orders",
           {
+            params: {
+              page: currentPage,
+              limit,
+            },
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
         setOrders(response.data.orders || []);
+        setTotalPages(response.data.pagination.totalPages);
+        setTotalOrders(response.data.pagination.totalOrders);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch orders");
       } finally {
@@ -71,10 +85,81 @@ const AllOrders = () => {
     };
 
     fetchOrders();
-  }, []);
+  }, [currentPage, limit]);
 
   const handleOrderClick = (orderId) => {
     navigate(`/orders/${orderId}`);
+  };
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const response = await axios.get(
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/orders",
+        {
+          params: {
+            limit: 1000,
+          },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const ordersToExport = response.data.orders;
+      const csvData = [
+        [
+          "Order ID",
+          "Date",
+          "Buyer",
+          "Seller",
+          "Products",
+          "Quantity",
+          "Total Price",
+          "Status",
+          "Payment Status",
+          "Shipping Address",
+        ],
+        ...ordersToExport.map((order) => [
+          order.orderId,
+          format(new Date(order.createdAt), "PPp"),
+          order.buyer,
+          order.seller,
+          order.products.map((p) => p.name).join(", "),
+          order.products.map((p) => p.quantity).reduce((a, b) => a + b, 0),
+          order.totalPrice.toFixed(2),
+          order.status,
+          order.paymentStatus,
+          `${order.address?.street || ""}, ${order.address?.city || ""}, ${
+            order.address?.state || ""
+          } - ${order.address?.pincode || ""}`,
+        ]),
+      ];
+
+      const csvString = csvData
+        .map((row) => row.map((cell) => `"${cell}"`).join(","))
+        .join("\n");
+
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute(
+          "download",
+          `orders_${format(new Date(), "yyyy-MM-dd")}.csv`
+        );
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err) {
+      console.error("Error exporting orders:", err);
+      setError("Failed to export orders. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -102,9 +187,18 @@ const AllOrders = () => {
             <p className="text-gray-600">Manage your orders</p>
           </div>
           <div className="flex gap-3">
-            <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 flex items-center transition-colors cursor-pointer">
-              <Download size={16} className="mr-2" />
-              Export
+            <button
+              onClick={handleExport}
+              disabled={exporting || loading}
+              className={`px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 flex items-center transition-colors ${
+                (exporting || loading) && "opacity-50 cursor-not-allowed"
+              }`}
+            >
+              <Download
+                size={16}
+                className={`mr-2 ${exporting && "animate-bounce"}`}
+              />
+              {exporting ? "Exporting..." : "Export"}
             </button>
           </div>
         </div>
@@ -232,6 +326,65 @@ const AllOrders = () => {
               <p className="mt-1 text-gray-500">
                 There are no orders to display at the moment.
               </p>
+            </div>
+          )}
+
+          {!loading && orders.length > 0 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing{" "}
+                <span className="font-medium">
+                  {(currentPage - 1) * limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium">
+                  {Math.min(currentPage * limit, totalOrders)}
+                </span>{" "}
+                of <span className="font-medium">{totalOrders}</span> orders
+              </div>
+              <div className="flex space-x-1">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-md transition-colors ${
+                    currentPage === 1
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 rounded-md transition-colors ${
+                        currentPage === page
+                          ? "bg-[#0c0b45] text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-md transition-colors ${
+                    currentPage === totalPages
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           )}
         </div>

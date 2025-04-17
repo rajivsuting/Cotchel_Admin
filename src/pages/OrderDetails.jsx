@@ -69,6 +69,7 @@ const OrderDetails = () => {
           }
         );
         setOrder(response.data.order);
+        console.log(response.data.order);
       } catch (err) {
         setError(
           err.response?.data?.message || "Failed to fetch order details"
@@ -116,10 +117,10 @@ const OrderDetails = () => {
           Back to Orders
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Order Summary */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column - Order Details and Products */}
+          <div className="lg:col-span-7">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
@@ -180,10 +181,37 @@ const OrderDetails = () => {
                 </div>
               </div>
             </div>
+
+            {/* Order Summary Card */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+              <div className="space-y-2">
+                <div className="flex justify-between text-gray-500">
+                  <span>Subtotal</span>
+                  <div className="flex items-center">
+                    <IndianRupee className="w-4 h-4" />
+                    {order.totalPrice.toFixed(2)}
+                  </div>
+                </div>
+                <div className="flex justify-between text-gray-500">
+                  <span>Shipping</span>
+                  <span>Free</span>
+                </div>
+                <div className="border-t border-gray-200 pt-2 mt-2">
+                  <div className="flex justify-between font-medium text-gray-900">
+                    <span>Total</span>
+                    <div className="flex items-center">
+                      <IndianRupee className="w-4 h-4" />
+                      {order.totalPrice.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Order Info Sidebar */}
-          <div className="space-y-6">
+          {/* Right Column - Customer and Seller Information */}
+          <div className="lg:col-span-5 space-y-6">
             {/* Customer Information */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold mb-4">
@@ -193,8 +221,10 @@ const OrderDetails = () => {
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
-                    <p className="font-medium text-gray-900">{order.buyer}</p>
-                    <p className="text-gray-500">Buyer</p>
+                    <p className="font-medium text-gray-900">
+                      {order.buyer.name}
+                    </p>
+                    <p className="text-gray-500">{order.buyer.email}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -226,30 +256,46 @@ const OrderDetails = () => {
               </div>
             </div>
 
-            {/* Order Summary */}
+            {/* Seller Information */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-              <div className="space-y-2">
-                <div className="flex justify-between text-gray-500">
-                  <span>Subtotal</span>
-                  <div className="flex items-center">
-                    <IndianRupee className="w-4 h-4" />
-                    {order.totalPrice.toFixed(2)}
+              <h2 className="text-lg font-semibold mb-4">Seller Information</h2>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <User className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {order.seller.name}
+                    </p>
+                    <p className="text-gray-500">{order.seller.businessName}</p>
+                    <p className="text-gray-500">{order.seller.email}</p>
                   </div>
                 </div>
-                <div className="flex justify-between text-gray-500">
-                  <span>Shipping</span>
-                  <span>Free</span>
-                </div>
-                <div className="border-t border-gray-200 pt-2 mt-2">
-                  <div className="flex justify-between font-medium text-gray-900">
-                    <span>Total</span>
-                    <div className="flex items-center">
-                      <IndianRupee className="w-4 h-4" />
-                      {order.totalPrice.toFixed(2)}
+                {order.seller.address && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        Business Address
+                      </p>
+                      <p className="text-gray-500">
+                        {order.seller.address.addressLine1}
+                        {order.seller.address.addressLine2 && (
+                          <>
+                            <br />
+                            {order.seller.address.addressLine2}
+                          </>
+                        )}
+                        <br />
+                        {order.seller.address.city},{" "}
+                        {order.seller.address.state}
+                        <br />
+                        {order.seller.address.postalCode}
+                        <br />
+                        {order.seller.address.country}
+                      </p>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

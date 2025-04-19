@@ -34,23 +34,11 @@ import {
   Package,
   CreditCard,
 } from "lucide-react";
+import axios from "axios";
+
+const API_BASE_URL = "https://cotchel-server-tvye7.ondigitalocean.app/api";
 
 // Static data moved outside component to prevent recreation on re-renders
-const revenueData = [
-  { name: "Jan", value: 12000 },
-  { name: "Feb", value: 19000 },
-  { name: "Mar", value: 15000 },
-  { name: "Apr", value: 21000 },
-  { name: "May", value: 26000 },
-  { name: "Jun", value: 25000 },
-  { name: "Jul", value: 30000 },
-  { name: "Aug", value: 15000 },
-  { name: "Sep", value: 21000 },
-  { name: "Oct", value: 26000 },
-  { name: "Nov", value: 25000 },
-  { name: "Dec", value: 30000 },
-];
-
 const topSellers = [
   {
     id: 1,
@@ -87,21 +75,6 @@ const topSellers = [
     revenue: "$14,980",
     growth: 5.8,
   },
-];
-
-const userGrowthData = [
-  { name: "Jan", buyers: 1200, sellers: 150 },
-  { name: "Feb", buyers: 1350, sellers: 180 },
-  { name: "Mar", buyers: 1500, sellers: 220 },
-  { name: "Apr", buyers: 1750, sellers: 250 },
-  { name: "May", buyers: 2100, sellers: 2320 },
-  { name: "Jun", buyers: 2400, sellers: 350 },
-  { name: "Jul", buyers: 2800, sellers: 390 },
-  { name: "Aug", buyers: 1500, sellers: 220 },
-  { name: "Sep", buyers: 1750, sellers: 250 },
-  { name: "Oct", buyers: 2100, sellers: 320 },
-  { name: "Nov", buyers: 2400, sellers: 350 },
-  { name: "Dec", buyers: 2800, sellers: 390 },
 ];
 
 const periodOptions = [
@@ -171,30 +144,99 @@ const SummaryCard = ({
     </div>
   </div>
 );
-// const SummaryCard = ({ title, value, icon: Icon, color, percentage }) => (
-//   <div className="bg-white rounded-lg shadow p-6">
-
-//   </div>
-// );
 
 const Analytics = () => {
   const [activePeriod, setActivePeriod] = useState("month");
+  const [revenueData, setRevenueData] = useState([]);
+  const [userGrowthData, setUserGrowthData] = useState([]);
   const [realTimeStats, setRealTimeStats] = useState({
-    activeUsers: 142,
-    pendingOrders: 23,
-    openTickets: 5,
+    activeUsers: 0,
+    activeProducts: 0,
+    openTickets: 0,
   });
+  const [summaryStats, setSummaryStats] = useState({
+    totalRevenue: { value: 0, percentage: 0 },
+    activeSellers: { value: 0, percentage: 0 },
+    activeBuyers: { value: 0, percentage: 0 },
+  });
+  const [topSellers, setTopSellers] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch all dashboard data at once
   useEffect(() => {
-    const interval = setInterval(() => {
-      setRealTimeStats((prev) => ({
-        activeUsers: Math.floor(Math.random() * 200) + 50,
-        pendingOrders: Math.floor(Math.random() * 30),
-        openTickets: Math.floor(Math.random() * 10),
-      }));
-    }, 5000);
-    return () => clearInterval(interval);
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch both dashboard and stats data in parallel
+        const [dashboardResponse, statsResponse] = await Promise.all([
+          axios.get(`${API_BASE_URL}/analytics/dashboard`),
+          axios.get(`${API_BASE_URL}/analytics/real-time-stats`),
+        ]);
+
+        const {
+          revenueData,
+          userGrowthData,
+          summaryStats,
+          topSellers,
+          recentActivities,
+        } = dashboardResponse.data;
+
+        setRevenueData(revenueData || []);
+        setUserGrowthData(userGrowthData || []);
+        setSummaryStats(
+          summaryStats || {
+            totalRevenue: { value: 0, percentage: 0 },
+            activeSellers: { value: 0, percentage: 0 },
+            activeBuyers: { value: 0, percentage: 0 },
+          }
+        );
+        setTopSellers(topSellers || []);
+        setRecentActivities(recentActivities || []);
+        setRealTimeStats(statsResponse.data);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        setError(error.message || "Failed to fetch dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0c0b45] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">
+            Error loading dashboard
+          </div>
+          <p className="text-gray-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-[#0c0b45] text-white rounded-md hover:bg-[#0c0b45]/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,8 +252,9 @@ const Analytics = () => {
           </div>
           <div className="flex items-center space-x-4">
             <button
+              onClick={() => window.location.reload()}
               className="p-1 rounded-full text-gray-400 hover:text-gray-500"
-              aria-label="Notifications"
+              aria-label="Refresh"
             >
               <Bell className="w-6 h-6" />
             </button>
@@ -238,11 +281,6 @@ const Analytics = () => {
                 {option.label}
               </button>
             ))}
-            {/* <button className="flex items-center px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-              <Calendar className="w-4 h-4 mr-2" aria-hidden="true" />
-              Custom
-              <ChevronDown className="ml-2 w-4 h-4" aria-hidden="true" />
-            </button> */}
           </div>
         </div>
 
@@ -260,9 +298,9 @@ const Analytics = () => {
           <div className="bg-white p-4 rounded-lg shadow flex items-center">
             <Package className="w-6 h-6 text-blue-500 mr-3" />
             <div>
-              <p className="text-sm text-gray-500">Pending Orders</p>
+              <p className="text-sm text-gray-500">Active Products</p>
               <p className="text-xl font-semibold">
-                {realTimeStats.pendingOrders}
+                {realTimeStats.activeProducts}
               </p>
             </div>
           </div>
@@ -278,34 +316,27 @@ const Analytics = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <SummaryCard
             title="Total Revenue"
-            value="$148,950"
+            value={`$${summaryStats.totalRevenue.value.toLocaleString()}`}
             icon={DollarSign}
             color={{ bg: "bg-green-100", text: "text-green-600" }}
-            percentage={12.5}
-          />
-          <SummaryCard
-            title="Total Transactions"
-            value="2,450"
-            icon={ShoppingCart}
-            color={{ bg: "bg-blue-100", text: "text-blue-600" }}
-            percentage={8.2}
+            percentage={summaryStats.totalRevenue.percentage}
           />
           <SummaryCard
             title="Active Sellers"
-            value="390"
+            value={summaryStats.activeSellers.value.toLocaleString()}
             icon={Users}
             color={{ bg: "bg-purple-100", text: "text-purple-600" }}
-            percentage={11.4}
+            percentage={summaryStats.activeSellers.percentage}
           />
           <SummaryCard
             title="Active Buyers"
-            value="2,800"
+            value={summaryStats.activeBuyers.value.toLocaleString()}
             icon={User}
             color={{ bg: "bg-yellow-100", text: "text-yellow-600" }}
-            percentage={16.8}
+            percentage={summaryStats.activeBuyers.percentage}
           />
         </div>
 
@@ -331,9 +362,18 @@ const Analytics = () => {
                       <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                  />
+                  <Tooltip
+                    formatter={(value) => [
+                      `$${value.toLocaleString()}`,
+                      "Revenue",
+                    ]}
+                  />
                   <Area
                     type="monotone"
                     dataKey="value"
@@ -358,20 +398,35 @@ const Analytics = () => {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={userGrowthData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value) => value.toLocaleString()}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      const label = name === "buyers" ? "Buyers" : "Sellers";
+                      return [value.toLocaleString(), label];
+                    }}
+                  />
                   <Line
                     type="monotone"
                     dataKey="buyers"
+                    name="buyers"
                     stroke="#6366F1"
                     strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="sellers"
+                    name="sellers"
                     stroke="#10B981"
                     strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -392,7 +447,7 @@ const Analytics = () => {
         {/* Additional Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Recent Activities */}
-          <div className="bg-white rounded-lg shadow p-6">
+          {/* <div className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-medium text-gray-900">
                 Recent Activities
@@ -409,7 +464,7 @@ const Analytics = () => {
                 >
                   <div className="flex items-center">
                     <Clock className="w-4 h-4 text-gray-400 mr-3" />
-                    <span className="text-sm">{activity.type}</span>
+                    <span className="text-sm">{activity.user}</span>
                   </div>
                   <div className="text-sm text-gray-500">
                     {activity.amount && (
@@ -420,7 +475,7 @@ const Analytics = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Top Sellers */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -453,28 +508,8 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-lg shadow text-center">
-            <p className="text-sm text-gray-500 mb-1">Avg. Order Value</p>
-            <p className="text-xl font-semibold">$89.50</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow text-center">
-            <p className="text-sm text-gray-500 mb-1">Conversion Rate</p>
-            <p className="text-xl font-semibold">3.2%</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow text-center">
-            <p className="text-sm text-gray-500 mb-1">Return Rate</p>
-            <p className="text-xl font-semibold">1.8%</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow text-center">
-            <p className="text-sm text-gray-500 mb-1">Inventory Turnover</p>
-            <p className="text-xl font-semibold">4.2x</p>
-          </div>
-        </div>
-
         {/* Data Export */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        {/* <div className="bg-white rounded-lg shadow p-6 mb-8">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-medium text-gray-900">Data Export</h3>
@@ -493,7 +528,7 @@ const Analytics = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
       </main>
     </div>
   );

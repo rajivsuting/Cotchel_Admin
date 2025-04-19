@@ -16,7 +16,7 @@ const useDashboard = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "http://localhost:5000/api/dashboard/stats",
+        "https://cotchel-server-tvye7.ondigitalocean.app/api/dashboard/stats",
         {
           withCredentials: true,
         }

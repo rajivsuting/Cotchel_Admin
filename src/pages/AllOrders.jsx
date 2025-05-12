@@ -69,9 +69,6 @@ const AllOrders = () => {
               page: currentPage,
               limit,
             },
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
           }
         );
         setOrders(response.data.orders || []);
@@ -99,9 +96,6 @@ const AllOrders = () => {
         {
           params: {
             limit: 1000,
-          },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );

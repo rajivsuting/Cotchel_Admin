@@ -19,6 +19,9 @@ import {
   Shirt,
   Watch,
   Footprints,
+  CircuitBoard,
+  Cpu,
+  Monitor,
 } from "lucide-react";
 import useDashboard from "../hooks/useDashboard";
 import { useAuth } from "../contexts/AuthContext";
@@ -244,11 +247,11 @@ const Dashboard = () => {
                         } flex items-center justify-center`}
                       >
                         {index === 0 ? (
-                          <Shirt size={16} className="text-blue-600" />
+                          <Monitor size={16} className="text-blue-600" />
                         ) : index === 1 ? (
-                          <Watch size={16} className="text-purple-600" />
+                          <Cpu size={16} className="text-purple-600" />
                         ) : (
-                          <Footprints size={16} className="text-green-600" />
+                          <CircuitBoard size={16} className="text-green-600" />
                         )}
                       </div>
                     </div>

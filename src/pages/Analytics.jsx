@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://cotchel-server-tvye7.ondigitalocean.app/api";
 
 // Static data moved outside component to prevent recreation on re-renders
 const topSellers = [

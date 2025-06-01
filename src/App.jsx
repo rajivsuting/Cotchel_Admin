@@ -1,6 +1,6 @@
-import { BrowserRouter as Router } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
 import "./App.css";
-import AllRoutes from "./routes/AllRoutes";
+import router from "./routes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -9,12 +9,10 @@ axios.defaults.withCredentials = true;
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AllRoutes />
-        <ToastContainer position="top-right" autoClose={5000} />
-      </AuthProvider>
-    </Router>
+    <AuthProvider>
+      <RouterProvider router={router} />
+      <ToastContainer position="top-right" autoClose={5000} />
+    </AuthProvider>
   );
 }
 

@@ -478,20 +478,26 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="px-6 py-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
+          <div className="px-8 py-10">
+            <h1 className="text-3xl font-bold text-gray-900 mb-10 flex items-center">
+              <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-3">
+                <ImageIcon className="w-6 h-6" />
+              </span>
               Add New Product
             </h1>
-            <form onSubmit={handleSubmit} className="space-y-12">
+            <form onSubmit={handleSubmit} className="space-y-16">
               {/* Basic Information */}
-              <div className="space-y-6">
-                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              <div className="space-y-8">
+                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
+                  <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3">
+                    <FileText className="w-5 h-5" />
+                  </span>
                   Basic Information
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <InputField
                     label="Product Title"
                     value={productTitle}
@@ -516,11 +522,14 @@ const AddProduct = () => {
               </div>
 
               {/* Pricing & Inventory */}
-              <div className="space-y-6">
-                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              <div className="space-y-8">
+                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
+                  <span className="bg-green-100 text-green-600 p-2 rounded-lg mr-3">
+                    <FileText className="w-5 h-5" />
+                  </span>
                   Pricing & Inventory
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <InputField
                     label="Price"
                     type="number"
@@ -561,21 +570,26 @@ const AddProduct = () => {
               </div>
 
               {/* Product Details */}
-              <div className="space-y-6">
-                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              <div className="space-y-8">
+                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
+                  <span className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-3">
+                    <FileText className="w-5 h-5" />
+                  </span>
                   Product Details
                 </h2>
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
                       Key Highlights <span className="text-red-500">*</span>
                     </label>
-                    <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="space-y-4 p-6 bg-gray-50 border border-gray-200 rounded-xl">
                       {highlights.map((highlight, index) => (
-                        <div key={index} className="flex items-start">
-                          <span className="text-blue-600 mr-3 mt-2">•</span>
+                        <div key={index} className="flex items-start group">
+                          <span className="text-indigo-600 mr-3 mt-2 group-hover:text-indigo-700 transition-colors">
+                            •
+                          </span>
                           <textarea
-                            className="w-full bg-transparent resize-none border-b border-gray-300 focus:border-blue-500 focus:outline-none placeholder-gray-400 text-gray-700 py-1 transition-all duration-200"
+                            className="w-full bg-transparent resize-none border-b border-gray-300 focus:border-indigo-500 focus:outline-none placeholder-gray-400 text-gray-700 py-2 transition-all duration-200"
                             ref={(el) => (textAreaRefs.current[index] = el)}
                             value={highlight}
                             onChange={(e) => handleChangeKeyHighlight(e, index)}
@@ -599,7 +613,7 @@ const AddProduct = () => {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <InputField
                       label="Brand"
                       value={brand}
@@ -618,14 +632,14 @@ const AddProduct = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
                       Product Description{" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full p-4 border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      className="w-full p-6 border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
                       rows={6}
                       placeholder="Describe your product in detail..."
                       aria-label="Product Description"
@@ -636,7 +650,7 @@ const AddProduct = () => {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <InputField
                       label="Length (mm)"
                       type="number"
@@ -678,18 +692,24 @@ const AddProduct = () => {
               </div>
 
               {/* Media & Files */}
-              <div className="space-y-6">
-                <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              <div className="space-y-8">
+                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
+                  <span className="bg-pink-100 text-pink-600 p-2 rounded-lg mr-3">
+                    <ImageIcon className="w-5 h-5" />
+                  </span>
                   Media & Files
                 </h2>
-                <div className="space-y-8">
+                <div className="space-y-10">
                   {/* Media Upload Section */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-8">
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-10">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3">
+                          <ImageIcon className="w-5 h-5" />
+                        </span>
                         Media Upload
                       </h3>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-lg">
                         All images should be at least 1000x1000px
                       </div>
                     </div>
@@ -1015,13 +1035,13 @@ const AddProduct = () => {
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-end pt-6">
+              <div className="flex justify-end pt-8">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                  className="flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
                 >
-                  {loading && <Loader2 className="animate-spin mr-2 h-5 w-5" />}
+                  {loading && <Loader2 className="animate-spin mr-3 h-5 w-5" />}
                   {loading ? "Submitting..." : "Add Product"}
                 </button>
               </div>
@@ -1051,7 +1071,7 @@ const InputField = ({
   placeholder,
 }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">
+    <label className="block text-sm font-medium text-gray-700 mb-3">
       {label} {required && <span className="text-red-500">*</span>}
     </label>
     <input
@@ -1060,7 +1080,7 @@ const InputField = ({
       onChange={onChange}
       className={`w-full p-4 border ${
         error ? "border-red-500" : "border-gray-200"
-      } rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200`}
+      } rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200`}
       placeholder={placeholder}
       aria-label={label}
       aria-invalid={!!error}
@@ -1071,7 +1091,7 @@ const InputField = ({
 
 export const DropdownInput = ({ label, dropdown, singleSelect, error }) => (
   <div ref={dropdown.dropdownRef}>
-    <label className="block text-sm font-medium text-gray-700 mb-2">
+    <label className="block text-sm font-medium text-gray-700 mb-3">
       {label} <span className="text-red-500">*</span>
     </label>
     <div className="relative">
@@ -1079,12 +1099,12 @@ export const DropdownInput = ({ label, dropdown, singleSelect, error }) => (
         {dropdown.selectedItems.map((item) => (
           <div
             key={item._id}
-            className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-1 text-sm shadow-sm"
+            className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full flex items-center gap-2 text-sm shadow-sm hover:bg-indigo-200 transition-colors duration-200"
           >
             {item.name}
             <button
               type="button"
-              className="text-blue-600 hover:text-blue-900 focus:outline-none"
+              className="text-indigo-600 hover:text-indigo-900 focus:outline-none"
               onClick={() => dropdown.handleRemoveItem(item)}
               aria-label={`Remove ${item.name}`}
             >
@@ -1097,7 +1117,7 @@ export const DropdownInput = ({ label, dropdown, singleSelect, error }) => (
         type="text"
         className={`w-full p-4 border ${
           error ? "border-red-500" : "border-gray-200"
-        } rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200`}
+        } rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200`}
         value={dropdown.input}
         onChange={dropdown.handleInputChange}
         onFocus={dropdown.handleFocus}
@@ -1109,12 +1129,12 @@ export const DropdownInput = ({ label, dropdown, singleSelect, error }) => (
         aria-invalid={!!error}
       />
       {dropdown.showDropdown && dropdown.filteredItems.length > 0 && (
-        <ul className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <ul className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
           {dropdown.filteredItems.map((item) => (
             <li
               key={item._id}
-              className={`px-4 py-3 cursor-pointer hover:bg-blue-50 transition-all duration-150 ${
-                dropdown.matchedItem?._id === item._id ? "bg-blue-50" : ""
+              className={`px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-all duration-150 ${
+                dropdown.matchedItem?._id === item._id ? "bg-indigo-50" : ""
               }`}
               onClick={() => dropdown.handleSelectItem(item)}
               role="option"

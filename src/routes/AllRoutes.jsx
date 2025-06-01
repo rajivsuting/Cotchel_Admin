@@ -7,6 +7,7 @@ import AddProduct from "../pages/AddProduct";
 import EditProduct from "../pages/EditProduct";
 import Setting from "../pages/Setting";
 import HelpCenter from "../pages/HelpCenter";
+import InquiryDetails from "../pages/InquiryDetails";
 import Analytics from "../pages/Analytics";
 import Categories from "../pages/Categories";
 import AllOrders from "../pages/AllOrders";
@@ -24,7 +25,14 @@ import Payments from "../pages/Payments";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Signin from "../pages/Signin";
 import OrderDetails from "../pages/OrderDetails";
-
+import Banners from "../pages/Banners";
+import AddBanner from "../pages/AddBanner";
+import EditBanner from "../pages/EditBanner";
+import PromotionalBanners from "../pages/PromotionalBanners";
+import AddPromotionalBanner from "../pages/AddPromotionalBanner";
+import EditPromotionalBanner from "../pages/EditPromotionalBanner";
+import TransactionDetails from "../pages/TransactionDetails";
+import SellerTransactions from "../pages/SellerTransactions";
 const AllRoutes = () => {
   return (
     <Routes>
@@ -44,6 +52,7 @@ const AllRoutes = () => {
         <Route path="/products/:id" element={<ProductDetails />} />
         <Route path="/setting" element={<Setting />} />
         <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/help-center/:id" element={<InquiryDetails />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/all-orders" element={<AllOrders />} />
@@ -57,8 +66,24 @@ const AllRoutes = () => {
         <Route path="/approvals" element={<PendingApprovals />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/payments" element={<Payments />} />
-
         <Route path="/orders/:orderId" element={<OrderDetails />} />
+        <Route path="/hero-banners" element={<Banners />} />
+        <Route path="/add-banner" element={<AddBanner />} />
+        <Route path="/edit-banner/:id" element={<EditBanner />} />
+        <Route path="/promotional-banners" element={<PromotionalBanners />} />
+        <Route
+          path="/add-promotional-banner"
+          element={<AddPromotionalBanner />}
+        />
+        <Route
+          path="/edit-promotional-banner/:id"
+          element={<EditPromotionalBanner />}
+        />
+        <Route path="/transactions/:id" element={<TransactionDetails />} />{" "}
+        <Route
+          path="/transactions/seller/:sellerId"
+          element={<SellerTransactions />}
+        />
       </Route>
     </Routes>
   );

@@ -12,6 +12,7 @@ import {
   Menu,
   Truck,
   DollarSign,
+  FileText,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import useSocket from "../hooks/useSocket"; // Import the Socket.IO hook
@@ -25,7 +26,7 @@ const Sidebar = () => {
     console.log("Loaded from localStorage:", saved);
     return saved
       ? JSON.parse(saved)
-      : { products: false, orders: false, customers: false };
+      : { products: false, orders: false, customers: false, content: false };
   });
 
   // Use Socket.IO hook for admin notifications
@@ -227,6 +228,68 @@ const Sidebar = () => {
               )}
             </div>
 
+            {/* Content Section */}
+            <div className="mb-1 group">
+              <button
+                onClick={() => toggleExpand("content")}
+                className={`w-full flex items-center justify-between px-3 py-2 text-gray-300 hover:bg-[#1d1c5e] rounded-md transition-colors ${
+                  expanded.content ? "bg-[#1d1c5e]" : ""
+                }`}
+              >
+                <div className="flex items-center">
+                  <FileText size={20} className="text-gray-300 min-w-5" />
+                  {!collapsed && <span className="ml-3">Contents</span>}
+                </div>
+                {!collapsed && (
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-400 transform transition-transform ${
+                      expanded.content ? "rotate-180" : ""
+                    }`}
+                  />
+                )}
+                {collapsed && (
+                  <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
+                    Contents
+                  </div>
+                )}
+              </button>
+
+              {expanded.content && !collapsed && (
+                <div className="pl-9 pr-2 py-1">
+                  <NavLink
+                    to="/hero-banners"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
+                  >
+                    Hero Banners
+                  </NavLink>
+                </div>
+              )}
+
+              {expanded.content && !collapsed && (
+                <div className="pl-9 pr-2 py-1">
+                  <NavLink
+                    to="/promotional-banners"
+                    className={({ isActive }) =>
+                      `block py-2 px-2 text-sm rounded-md ${
+                        isActive
+                          ? "text-white bg-[#1d1c5e]"
+                          : "text-gray-400 hover:text-white hover:bg-[#1d1c5e]"
+                      }`
+                    }
+                  >
+                    Promotional Banners
+                  </NavLink>
+                </div>
+              )}
+            </div>
+
             {/* Customers Section */}
             <div className="mb-1 group">
               <button
@@ -330,24 +393,6 @@ const Sidebar = () => {
             </div>
 
             {/* Shipping */}
-            <div className="mb-1 group">
-              <NavLink
-                to="/shipping"
-                className={({ isActive }) =>
-                  `flex items-center px-3 py-2 rounded-md transition-colors ${
-                    isActive ? activeClassName : inactiveClassName
-                  }`
-                }
-              >
-                <Truck size={20} className="min-w-5" />
-                {!collapsed && <span className="ml-3">Shipping</span>}
-                {collapsed && (
-                  <div className="absolute left-16 hidden group-hover:block bg-gray-800 text-white px-2 py-1 rounded whitespace-nowrap">
-                    Shipping
-                  </div>
-                )}
-              </NavLink>
-            </div>
           </nav>
         </div>
 

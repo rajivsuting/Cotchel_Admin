@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "https://cotchel-server-tvye7.ondigitalocean.app/api";
 
 // Optimized debounce hook with cleanup
 const useDebounce = (value, delay = 500) => {

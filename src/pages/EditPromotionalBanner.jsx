@@ -375,4 +375,4 @@ const EditPromotionalBanner = () => {
   );
 };
 
-export defaul
+export default EditPromotionalBanner;

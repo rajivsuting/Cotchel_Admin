@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-const API_BASE_URL = "https://cotchel-server-tvye7.ondigitalocean.app/api";
+const API_BASE_URL = "https://starfish-app-6q6ot.ondigitalocean.app/api";
 
 // Static data moved outside component to prevent recreation on re-renders
 const topSellers = [
@@ -121,6 +121,7 @@ const SummaryCard = ({
   color,
   percentage,
   onClick,
+  activePeriod,
 }) => (
   <div
     className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer"
@@ -136,11 +137,27 @@ const SummaryCard = ({
       </div>
     </div>
     <div className="mt-4 flex items-center">
-      <ArrowUpRight className="w-4 h-4 text-green-500" />
-      <span className="text-sm font-medium text-green-500 ml-1">
-        {percentage}%
+      <ArrowUpRight
+        className={`w-4 h-4 ${
+          percentage >= 0 ? "text-green-500" : "text-red-500"
+        }`}
+      />
+      <span
+        className={`text-sm font-medium ml-1 ${
+          percentage >= 0 ? "text-green-500" : "text-red-500"
+        }`}
+      >
+        {percentage >= 0 ? "+" : ""}
+        {percentage.toFixed(1)}%
       </span>
-      <span className="text-sm text-gray-500 ml-2">from last month</span>
+      <span className="text-sm text-gray-500 ml-2">
+        from last{" "}
+        {activePeriod === "week"
+          ? "week"
+          : activePeriod === "month"
+          ? "month"
+          : "year"}
+      </span>
     </div>
   </div>
 );
@@ -173,7 +190,9 @@ const Analytics = () => {
 
         // Fetch both dashboard and stats data in parallel
         const [dashboardResponse, statsResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/analytics/dashboard`),
+          axios.get(
+            `${API_BASE_URL}/analytics/dashboard?period=${activePeriod}`
+          ),
           axios.get(`${API_BASE_URL}/analytics/real-time-stats`),
         ]);
 
@@ -206,7 +225,7 @@ const Analytics = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [activePeriod]);
 
   if (loading) {
     return (
@@ -307,7 +326,7 @@ const Analytics = () => {
           <div className="bg-white p-4 rounded-lg shadow flex items-center">
             <AlertCircle className="w-6 h-6 text-red-500 mr-3" />
             <div>
-              <p className="text-sm text-gray-500">Open Tickets</p>
+              <p className="text-sm text-gray-500">Open Inquiries</p>
               <p className="text-xl font-semibold">
                 {realTimeStats.openTickets}
               </p>
@@ -319,10 +338,11 @@ const Analytics = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <SummaryCard
             title="Total Revenue"
-            value={`$${summaryStats.totalRevenue.value.toLocaleString()}`}
+            value={`₹${summaryStats.totalRevenue.value.toLocaleString()}`}
             icon={DollarSign}
             color={{ bg: "bg-green-100", text: "text-green-600" }}
             percentage={summaryStats.totalRevenue.percentage}
+            activePeriod={activePeriod}
           />
           <SummaryCard
             title="Active Sellers"
@@ -330,6 +350,7 @@ const Analytics = () => {
             icon={Users}
             color={{ bg: "bg-purple-100", text: "text-purple-600" }}
             percentage={summaryStats.activeSellers.percentage}
+            activePeriod={activePeriod}
           />
           <SummaryCard
             title="Active Buyers"
@@ -337,6 +358,7 @@ const Analytics = () => {
             icon={User}
             color={{ bg: "bg-yellow-100", text: "text-yellow-600" }}
             percentage={summaryStats.activeBuyers.percentage}
+            activePeriod={activePeriod}
           />
         </div>
 
@@ -366,11 +388,11 @@ const Analytics = () => {
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tickFormatter={(value) => `$${value.toLocaleString()}`}
+                    tickFormatter={(value) => `₹${value.toLocaleString()}`}
                   />
                   <Tooltip
                     formatter={(value) => [
-                      `$${value.toLocaleString()}`,
+                      `₹${value.toLocaleString()}`,
                       "Revenue",
                     ]}
                   />
@@ -500,7 +522,7 @@ const Analytics = () => {
                     <span className="text-sm">{seller.name}</span>
                   </div>
                   <div className="text-sm font-medium text-[#0c0b45]">
-                    {seller.revenue}
+                    ₹{seller.revenue || "0"}
                   </div>
                 </div>
               ))}

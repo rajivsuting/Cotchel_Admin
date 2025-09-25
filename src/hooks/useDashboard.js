@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
 
 const useDashboard = () => {
+  const { api } = useAuth();
   const [dashboardData, setDashboardData] = useState({
     stats: [],
     orderStatus: [],
@@ -15,12 +16,7 @@ const useDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/dashboard/stats",
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await api.get("/api/dashboard/stats");
 
       // Detailed debugging of raw data
       console.log("Raw API Response Data:", {
@@ -97,27 +93,27 @@ const useDashboard = () => {
         stats: [
           {
             title: "Total Sales",
-            value: formatCurrency(validatedData.totalSales),
-            change: `${normalizePercentage(validatedData.salesChange)}%`,
-            positive: validatedData.salesChange >= 0,
+            value: formatCurrency(response.data.totalSales || 0),
+            change: null, // No comparison data
+            positive: null,
           },
           {
-            title: "New Customers",
-            value: validatedData.newCustomers,
-            change: `${normalizePercentage(validatedData.customersChange)}%`,
-            positive: validatedData.customersChange >= 0,
+            title: "Total Customers",
+            value: response.data.totalCustomers || 0,
+            change: null, // No comparison data
+            positive: null,
           },
           {
             title: "Total Orders",
-            value: validatedData.totalOrders,
-            change: `${normalizePercentage(validatedData.ordersChange)}%`,
-            positive: validatedData.ordersChange >= 0,
+            value: response.data.totalOrders || 0,
+            change: null, // No comparison data
+            positive: null,
           },
           {
-            title: "Total Revenue",
-            value: formatCurrency(validatedData.totalRevenue),
-            change: `${normalizePercentage(validatedData.revenueChange)}%`,
-            positive: validatedData.revenueChange >= 0,
+            title: "Total Products",
+            value: response.data.totalProducts || 0,
+            change: null, // No comparison data
+            positive: null,
           },
         ],
         orderStatus: [
@@ -193,7 +189,7 @@ const useDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [api]);
 
   return { dashboardData, loading, error };
 };

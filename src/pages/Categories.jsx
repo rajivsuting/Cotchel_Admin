@@ -3,6 +3,7 @@ import axios from "axios";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { Link } from "react-router-dom"; // Import Link for navigation
+import Swal from "sweetalert2";
 import {
   Search,
   Plus,
@@ -15,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-const CategoryRow = memo(({ category, onDelete }) => (
+const CategoryRow = memo(({ category, onDelete, onEdit }) => (
   <tr
     className="hover:bg-gray-50 transition-opacity duration-200 cursor-pointer"
     style={{ opacity: 0, animation: "fadeIn 0.3s forwards" }}
@@ -54,6 +55,7 @@ const CategoryRow = memo(({ category, onDelete }) => (
       <div className="flex justify-end items-center space-x-2">
         <button
           className="p-1 rounded-md text-gray-500 hover:text-[#0c0b45] hover:bg-gray-100 transition-colors cursor-pointer"
+          onClick={() => onEdit(category._id)}
           aria-label={`Edit ${category.name}`}
         >
           <Edit size={18} />
@@ -99,6 +101,10 @@ const Categories = () => {
   const [addingCategory, setAddingCategory] = useState(false);
   const [addError, setAddError] = useState(null);
   const [addSuccess, setAddSuccess] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editError, setEditError] = useState(null);
+  const [editSuccess, setEditSuccess] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -122,7 +128,7 @@ const Categories = () => {
       };
 
       const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/categories/all",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/categories/all",
         { params }
       );
 
@@ -158,7 +164,7 @@ const Categories = () => {
       }
 
       const response = await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/categories/create",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/categories/create",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -184,15 +190,72 @@ const Categories = () => {
   };
 
   const handleDeleteCategory = async (id) => {
-    try {
-      await axios.delete(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/categories/${id}`
-      );
-      setCategories((prev) => prev.filter((category) => category._id !== id));
-      fetchCategories();
-    } catch (err) {
-      setError("Failed to delete category. Please try again.");
-      console.error(err);
+    const category = categories.find((cat) => cat._id === id);
+    const categoryName = category ? category.name : "this category";
+
+    const result = await Swal.fire({
+      title: "Delete Category",
+      text: `Are you sure you want to delete "${categoryName}"? This action cannot be undone and will also delete all associated subcategories.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      customClass: {
+        popup: "w-96 p-4 bg-gray-100 rounded-lg shadow-lg",
+        icon: "w-12 h-12",
+        title: "text-lg font-bold text-gray-800",
+        htmlContainer: "text-sm text-gray-600",
+        actions: "flex justify-center gap-5",
+        confirmButton:
+          "bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700",
+        cancelButton:
+          "bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300",
+      },
+      buttonsStyling: false,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(
+          `https://starfish-app-6q6ot.ondigitalocean.app/api/categories/${id}`
+        );
+        setCategories((prev) => prev.filter((category) => category._id !== id));
+        fetchCategories();
+        Swal.fire({
+          title: "Deleted!",
+          text: "Category has been deleted successfully.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+          customClass: {
+            popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+            icon: "w-12 h-12",
+            title: "text-lg font-bold text-gray-800",
+            htmlContainer: "text-sm text-gray-600",
+          },
+          buttonsStyling: false,
+        });
+      } catch (err) {
+        setError("Failed to delete category. Please try again.");
+        console.error(err);
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to delete category. Please try again.",
+          icon: "error",
+          confirmButtonText: "OK",
+          customClass: {
+            popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+            icon: "w-12 h-12",
+            title: "text-lg font-bold text-gray-800",
+            htmlContainer: "text-sm text-gray-600",
+            confirmButton:
+              "bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700",
+          },
+          buttonsStyling: false,
+        });
+      }
     }
   };
 
@@ -211,6 +274,53 @@ const Categories = () => {
     if (file) {
       setNewCategoryIcon(file);
     }
+  };
+
+  const handleEditCategory = (id) => {
+    const category = categories.find((cat) => cat._id === id);
+    if (category) {
+      setEditingCategory(id);
+      setEditCategoryName(category.name);
+      setEditError(null);
+    }
+  };
+
+  const handleUpdateCategory = async (e) => {
+    e.preventDefault();
+    if (!editCategoryName.trim()) return;
+
+    try {
+      const response = await axios.put(
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/categories/${editingCategory}`,
+        { name: editCategoryName }
+      );
+
+      setCategories((prev) =>
+        prev.map((category) =>
+          category._id === editingCategory
+            ? { ...category, name: editCategoryName }
+            : category
+        )
+      );
+
+      setEditingCategory(null);
+      setEditCategoryName("");
+      setEditSuccess(true);
+      setTimeout(() => setEditSuccess(false), 3000);
+      fetchCategories();
+    } catch (err) {
+      setEditError(
+        err.response?.data?.message ||
+          "Failed to update category. Please try again."
+      );
+      console.error(err);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    setEditCategoryName("");
+    setEditError(null);
   };
 
   if (error && !loading) {
@@ -265,6 +375,13 @@ const Categories = () => {
           <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
             <Plus size={20} className="mr-2" />
             <p>Category added successfully!</p>
+          </div>
+        )}
+
+        {editSuccess && (
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
+            <Edit size={20} className="mr-2" />
+            <p>Category updated successfully!</p>
           </div>
         )}
 
@@ -349,6 +466,66 @@ const Categories = () => {
                   aria-label="Create category"
                 >
                   {addingCategory ? "Creating..." : "Create Category"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {editingCategory && (
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4 border-b border-gray-100 pb-2">
+              Edit Category
+            </h2>
+            {editError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
+                <Trash2 size={20} className="mr-2 flex-shrink-0 mt-0.5" />
+                <p>{editError}</p>
+              </div>
+            )}
+            <form onSubmit={handleUpdateCategory} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="editCategoryName"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Category Name
+                </label>
+                <input
+                  id="editCategoryName"
+                  type="text"
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all"
+                  placeholder="Enter category name"
+                  required
+                  aria-label="Category name"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Category name must be unique and will be displayed to
+                  customers.
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer"
+                  aria-label="Cancel edit"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!editCategoryName.trim()}
+                  className={`px-4 py-2 text-sm font-medium text-white bg-[#0c0b45] rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0c0b45] focus:ring-offset-2 transition-colors cursor-pointer ${
+                    !editCategoryName.trim()
+                      ? "opacity-70 cursor-not-allowed"
+                      : ""
+                  }`}
+                  aria-label="Update category"
+                >
+                  Update Category
                 </button>
               </div>
             </form>
@@ -447,6 +624,7 @@ const Categories = () => {
                         key={category._id}
                         category={category}
                         onDelete={handleDeleteCategory}
+                        onEdit={handleEditCategory}
                       />
                     ))}
               </tbody>

@@ -21,7 +21,7 @@ const SubcategoryDetails = () => {
     const fetchSubcategory = async () => {
       try {
         const response = await axios.get(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/get/${id}`
+          `https://starfish-app-6q6ot.ondigitalocean.app/api/subcategories/get/${id}`
         );
         setSubcategory(response.data.data);
         console.log(response.data.data);

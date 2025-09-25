@@ -31,7 +31,28 @@ const Sidebar = () => {
 
   // Use Socket.IO hook for admin notifications
   const { notifications } = useSocket(true); // isAdmin = true
-  const unreadCount = notifications.filter((notif) => !notif.read).length; // Count unread notifications
+  // Count only pending seller approvals with no approved/rejected for the same seller
+  const pendingSellerIds = new Set(
+    notifications
+      .filter(
+        (notif) =>
+          notif.type === "account_verification" &&
+          notif.verificationStatus === "pending"
+      )
+      .map((notif) => notif.sellerId?.toString())
+  );
+
+  notifications.forEach((notif) => {
+    if (
+      notif.type === "account_verification" &&
+      (notif.verificationStatus === "approved" ||
+        notif.verificationStatus === "rejected")
+    ) {
+      pendingSellerIds.delete(notif.sellerId?.toString());
+    }
+  });
+
+  const unreadCount = pendingSellerIds.size;
   const { logout, admin } = useAuth();
 
   useEffect(() => {

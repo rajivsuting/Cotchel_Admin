@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Package2,
   IndianRupee,
@@ -49,6 +49,7 @@ const StatusIcon = ({ status }) => {
 
 const AllOrders = () => {
   const navigate = useNavigate();
+  const { api } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,19 +63,17 @@ const AllOrders = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          "https://cotchel-server-tvye7.ondigitalocean.app/api/orders",
-          {
-            params: {
-              page: currentPage,
-              limit,
-            },
-          }
-        );
+        const response = await api.get("/api/orders", {
+          params: {
+            page: currentPage,
+            limit,
+          },
+        });
         setOrders(response.data.orders || []);
         setTotalPages(response.data.pagination.totalPages);
         setTotalOrders(response.data.pagination.totalOrders);
       } catch (err) {
+        console.error("Error fetching orders:", err);
         setError(err.response?.data?.message || "Failed to fetch orders");
       } finally {
         setLoading(false);
@@ -91,14 +90,11 @@ const AllOrders = () => {
   const handleExport = async () => {
     try {
       setExporting(true);
-      const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/orders",
-        {
-          params: {
-            limit: 1000,
-          },
-        }
-      );
+      const response = await api.get("/api/orders", {
+        params: {
+          limit: 1000,
+        },
+      });
 
       const ordersToExport = response.data.orders;
       const csvData = [
@@ -118,7 +114,9 @@ const AllOrders = () => {
           order.orderId,
           format(new Date(order.createdAt), "PPp"),
           order.buyer,
-          order.seller,
+          typeof order.seller === "object"
+            ? order.seller.businessName || order.seller.personalName
+            : order.seller,
           order.products.map((p) => p.name).join(", "),
           order.products.map((p) => p.quantity).reduce((a, b) => a + b, 0),
           order.totalPrice.toFixed(2),
@@ -150,7 +148,10 @@ const AllOrders = () => {
       }
     } catch (err) {
       console.error("Error exporting orders:", err);
-      setError("Failed to export orders. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Failed to export orders. Please try again."
+      );
     } finally {
       setExporting(false);
     }
@@ -273,7 +274,11 @@ const AllOrders = () => {
                         </div>
                         <div className="mt-2">
                           <div className="text-sm font-medium text-gray-900">
-                            Seller: {order.seller}
+                            Seller:{" "}
+                            {typeof order.seller === "object"
+                              ? order.seller.businessName ||
+                                order.seller.personalName
+                              : order.seller}
                           </div>
                         </div>
                       </div>

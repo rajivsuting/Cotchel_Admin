@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import Swal from "sweetalert2";
 import {
   Search,
   Plus,
@@ -42,11 +43,11 @@ const SkeletonRow = () => (
   </tr>
 );
 
-const UserRow = memo(({ user, onDelete }) => {
+const UserRow = memo(({ user, onDelete, onEdit }) => {
   const navigate = useNavigate();
 
   const handleRowClick = () => {
-    navigate(`/users/${user.id}`);
+    navigate(`/all-users/${user.id}`);
   };
 
   return (
@@ -93,6 +94,7 @@ const UserRow = memo(({ user, onDelete }) => {
       >
         <div className="flex justify-end items-center space-x-2">
           <button
+            onClick={() => onEdit(user.id)}
             className="p-1 rounded-md text-gray-500 hover:text-[#0c0b45] hover:bg-gray-100 transition-colors cursor-pointer"
             aria-label={`Edit ${user.fullName}`}
           >
@@ -123,6 +125,8 @@ styleSheet.textContent = styles;
 document.head.appendChild(styleSheet);
 
 const AllUsers = () => {
+  const navigate = useNavigate();
+  const { api } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -157,12 +161,9 @@ const AllUsers = () => {
         sort: sortOrder,
       };
 
-      const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/auth/all",
-        {
-          params,
-        }
-      );
+      const response = await api.get("/api/auth/all", {
+        params,
+      });
 
       const mappedUsers = response.data.data.users.map((user) => ({
         id: user._id,
@@ -190,15 +191,69 @@ const AllUsers = () => {
     emailVerifiedFilter,
     sortOrder,
     limit,
+    api,
   ]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleDeleteUser = (id) => {
-    setUsers(users.filter((user) => user.id !== id));
-    fetchUsers();
+  const handleDeleteUser = async (id) => {
+    try {
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to delete this user?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+        customClass: {
+          popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+          icon: "w-12 h-12",
+          title: "text-lg font-bold text-gray-800",
+          htmlContainer: "text-sm text-gray-600",
+          actions: "flex justify-center gap-5",
+          confirmButton: "bg-[#0c0b45] text-white py-2 px-4 rounded-lg",
+          cancelButton:
+            "bg-gray-200 text-[#0c0b45] py-2 px-4 rounded-lg hover:bg-gray-300",
+        },
+        buttonsStyling: false,
+      });
+
+      if (result.isConfirmed) {
+        await api.delete(`/api/auth/delete/${id}`);
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== id));
+
+        Swal.fire({
+          title: "Deleted!",
+          text: "The user has been deleted successfully.",
+          icon: "success",
+          timer: 2000,
+          customClass: {
+            popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+            title: "text-lg font-bold text-gray-800",
+            htmlContainer: "text-sm text-gray-600",
+          },
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to delete the user. Please try again.",
+        icon: "error",
+        customClass: {
+          popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+          title: "text-lg font-bold text-gray-800",
+          htmlContainer: "text-sm text-gray-600",
+        },
+      });
+    }
+  };
+
+  const handleEditUser = (id) => {
+    navigate(`/all-users/edit/${id}`);
   };
 
   const handleSort = () => {
@@ -235,6 +290,7 @@ const AllUsers = () => {
               Export
             </button>
             <button
+              onClick={() => navigate("/all-users/add")}
               className="flex items-center px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors cursor-pointer"
               aria-label="Add new user"
             >
@@ -343,6 +399,7 @@ const AllUsers = () => {
                         key={user.id}
                         user={user}
                         onDelete={handleDeleteUser}
+                        onEdit={handleEditUser}
                       />
                     ))}
               </tbody>
@@ -383,6 +440,7 @@ const AllUsers = () => {
                 for.
               </p>
               <button
+                onClick={() => navigate("/all-users/add")}
                 className="mt-4 px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors cursor-pointer"
                 aria-label="Add new user"
               >

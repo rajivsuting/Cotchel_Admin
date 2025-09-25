@@ -8,7 +8,7 @@ const AuthContext = createContext();
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_URL ||
-    "https://cotchel-server-tvye7.ondigitalocean.app",
+    "https://starfish-app-6q6ot.ondigitalocean.app",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

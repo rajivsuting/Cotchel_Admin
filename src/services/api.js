@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://cotchel-server-tvye7.ondigitalocean.app/api";
+const API_URL = "https://starfish-app-6q6ot.ondigitalocean.app/api";
 
 export const fetchNotifications = async () => {
   const response = await axios.get(`${API_URL}/auth/notifications`, {

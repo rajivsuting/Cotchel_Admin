@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
+import Swal from "sweetalert2";
 import {
   ArrowLeft,
   Trash2,
@@ -16,6 +17,7 @@ import {
 
 const UserDetails = () => {
   const { id } = useParams();
+  const { api } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,9 +32,7 @@ const UserDetails = () => {
         }
 
         setLoading(true);
-        const response = await axios.get(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/auth/get/${id}`
-        );
+        const response = await api.get(`/api/auth/get/${id}`);
         console.log("API Response:", response);
 
         if (response.status === 200) {
@@ -76,42 +76,72 @@ const UserDetails = () => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "This action cannot be undone. This will permanently delete the user and all associated data.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete user",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
       try {
-        await axios.delete(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/auth/get/${id}`
-        );
-        window.location.href = "/users";
+        await api.delete(`/api/auth/delete/${id}`);
+        Swal.fire({
+          title: "Deleted!",
+          text: "The user has been deleted successfully.",
+          icon: "success",
+        });
+        window.location.href = "/all-users";
       } catch (err) {
-        setError(
-          err.response?.data?.message ||
-            "Failed to delete user. Please try again."
-        );
         console.error("Delete Error:", err);
+        Swal.fire({
+          title: "Error!",
+          text: err.response?.data?.message || "Failed to delete user.",
+          icon: "error",
+        });
       }
     }
   };
 
   const handleToggleActive = async () => {
     const action = user.isActive ? "deactivate" : "activate";
-    if (window.confirm(`Are you sure you want to ${action} this user?`)) {
+    const result = await Swal.fire({
+      title: `Are you sure?`,
+      text: `Do you want to ${action} this user?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: `Yes, ${action}`,
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
       try {
-        const response = await axios.put(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/auth/deactivate/${id}`,
-          { isActive: !user.isActive }
-        );
+        const response = await api.put(`/api/auth/update/${id}`, {
+          isActive: !user.isActive,
+        });
         if (response.status === 200) {
           setUser({ ...user, isActive: !user.isActive });
           setError(null);
+          Swal.fire({
+            title: "Success!",
+            text: `User ${action}d successfully.`,
+            icon: "success",
+            timer: 2000,
+          });
         } else {
           throw new Error(`Server responded with status ${response.status}`);
         }
       } catch (err) {
-        setError(
-          err.response?.data?.message ||
-            `Failed to ${action} user. Please try again.`
-        );
         console.error("Toggle Active Error:", err);
+        Swal.fire({
+          title: "Error!",
+          text: err.response?.data?.message || `Failed to ${action} user.`,
+          icon: "error",
+        });
       }
     }
   };
@@ -130,7 +160,7 @@ const UserDetails = () => {
         <div className="text-center">
           <p className="text-red-600 text-lg font-medium">{error}</p>
           <Link
-            to="/users"
+            to="/all-users"
             className="mt-4 inline-flex items-center px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors"
           >
             <ArrowLeft size={16} className="mr-2" />
@@ -155,7 +185,7 @@ const UserDetails = () => {
         {/* Breadcrumb */}
         <nav className="flex items-center text-sm text-gray-500 mb-6">
           <Link
-            to="/users"
+            to="/all-users"
             className="flex items-center hover:text-[#0c0b45] transition-colors"
           >
             <ArrowLeft size={16} className="mr-2" />

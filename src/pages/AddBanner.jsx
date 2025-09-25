@@ -5,9 +5,9 @@ import { ArrowLeft, Upload, X, AlertCircle, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 
-const API_BASE_URL = "https://cotchel-server-tvye7.ondigitalocean.app/api";
+const API_BASE_URL = "https://starfish-app-6q6ot.ondigitalocean.app/api";
 const IMAGE_UPLOAD_URL =
-  "https://cotchel-server-tvye7.ondigitalocean.app/api/image/upload";
+  "https://starfish-app-6q6ot.ondigitalocean.app/api/image/upload";
 
 const AddBanner = () => {
   const navigate = useNavigate();

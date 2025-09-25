@@ -33,7 +33,7 @@ const HelpCenter = () => {
     try {
       setIsFetching(true);
       const response = await axios.get(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/inquiries?page=${currentPage}&limit=10&status=${
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/inquiries?page=${currentPage}&limit=10&status=${
           selectedFilter !== "all" ? selectedFilter : ""
         }`,
         {
@@ -75,7 +75,10 @@ const HelpCenter = () => {
     const matchesSearch =
       inquiry.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inquiry.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inquiry.user.fullName.toLowerCase().includes(searchQuery.toLowerCase());
+      (inquiry.user?.fullName &&
+        inquiry.user.fullName
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()));
 
     return matchesSearch;
   });
@@ -164,14 +167,16 @@ const HelpCenter = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-[#0c0b45] flex items-center justify-center text-white text-xl font-semibold shadow-lg">
-                        {inquiry.user.fullName.charAt(0)}
+                        {inquiry.user?.fullName
+                          ? inquiry.user.fullName.charAt(0).toUpperCase()
+                          : "?"}
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-800 text-lg">
-                          {inquiry.user.fullName}
+                          {inquiry.user?.fullName || "Unknown User"}
                         </h3>
                         <p className="text-sm text-gray-600">
-                          {inquiry.user.email}
+                          {inquiry.user?.email || "No email provided"}
                         </p>
                       </div>
                     </div>

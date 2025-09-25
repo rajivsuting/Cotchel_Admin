@@ -22,6 +22,7 @@ import {
   CircuitBoard,
   Cpu,
   Monitor,
+  BarChart3,
 } from "lucide-react";
 import useDashboard from "../hooks/useDashboard";
 import { useAuth } from "../contexts/AuthContext";
@@ -144,23 +145,25 @@ const Dashboard = () => {
                   <h3 className="text-2xl font-bold text-gray-800">
                     {stat.value}
                   </h3>
-                  <div className="mt-2 flex items-center">
-                    <span
-                      className={`text-sm font-medium flex items-center ${
-                        stat.positive ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {stat.positive ? (
-                        <ArrowUp size={14} />
-                      ) : (
-                        <ArrowDown size={14} />
-                      )}
-                      <span className="ml-1">{stat.change}</span>
-                    </span>
-                    <span className="text-xs text-gray-500 ml-2">
-                      vs last week
-                    </span>
-                  </div>
+                  {stat.change && (
+                    <div className="mt-2 flex items-center">
+                      <span
+                        className={`text-sm font-medium flex items-center ${
+                          stat.positive ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {stat.positive ? (
+                          <ArrowUp size={14} />
+                        ) : (
+                          <ArrowDown size={14} />
+                        )}
+                        <span className="ml-1">{stat.change}</span>
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        vs last week
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -204,6 +207,7 @@ const Dashboard = () => {
                 Total Orders: {totalOrders}
               </p>
               <button
+                onClick={() => navigate("/all-orders")}
                 style={{ color: themeColor }}
                 className="mt-3 hover:underline text-sm font-medium"
               >
@@ -285,6 +289,7 @@ const Dashboard = () => {
               )}
             </div>
             <button
+              onClick={() => navigate("/categories")}
               style={{ color: themeColor }}
               className="mt-4 text-sm font-medium hover:underline"
             >
@@ -299,7 +304,7 @@ const Dashboard = () => {
                 style={{ backgroundColor: themeLight }}
                 className="p-1 rounded-md mr-2"
               >
-                <Chart size={18} style={{ color: themeColor }} />
+                <BarChart3 size={18} style={{ color: themeColor }} />
               </span>
               Top Selling Products
             </h3>
@@ -440,6 +445,7 @@ const Dashboard = () => {
           </div>
           <div className="p-4 border-t border-gray-200 bg-gray-50">
             <button
+              onClick={() => navigate("/all-orders")}
               style={{ color: themeColor }}
               className="text-sm font-medium hover:underline"
             >
@@ -553,6 +559,7 @@ const Dashboard = () => {
           </div>
           <div className="p-4 border-t border-gray-200 bg-gray-50">
             <button
+              onClick={() => navigate("/all-products")}
               style={{ color: themeColor }}
               className="text-sm font-medium hover:underline"
             >
@@ -570,12 +577,12 @@ function getStatIcon(title) {
   switch (title) {
     case "Total Sales":
       return <CreditCard size={20} className="text-white" />;
-    case "New Customers":
+    case "Total Customers":
       return <Users size={20} className="text-white" />;
     case "Total Orders":
       return <ShoppingBag size={20} className="text-white" />;
-    case "Total Revenue":
-      return <TrendingUp size={20} className="text-white" />;
+    case "Total Products":
+      return <Package size={20} className="text-white" />;
     default:
       return null;
   }
@@ -617,28 +624,6 @@ const CategoryItem = ({ name, percentage, color, themeColor }) => {
         ></div>
       </div>
     </div>
-  );
-};
-
-// Custom chart icon
-const Chart = ({ size, className }) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <rect x="3" y="8" width="4" height="12" rx="1" />
-      <rect x="10" y="4" width="4" height="16" rx="1" />
-      <rect x="17" y="12" width="4" height="8" rx="1" />
-    </svg>
   );
 };
 

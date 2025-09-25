@@ -7,7 +7,7 @@ import {
 } from "../services/api";
 import { toast } from "react-toastify";
 
-const socket = io("https://cotchel-server-tvye7.ondigitalocean.app", {
+const socket = io("https://starfish-app-6q6ot.ondigitalocean.app", {
   withCredentials: true, // Support cookies for auth
 });
 
@@ -42,24 +42,46 @@ const useSocket = (isAdmin = false) => {
       // Join admin room
       socket.emit("joinAdminRoom");
 
-      // Listen for new seller registrations
-      socket.on("sellerRegistered", (data) => {
-        // Ensure the notification has an id property
-        const id = data._id || data.id;
-
+      // Listen for account verification notifications
+      socket.on("accountVerification", (data) => {
         const formattedData = {
           ...data,
-          id: id, // Use _id if available, otherwise use id
+          id: data._id || data.id,
+          type: "account_verification",
+          verificationStatus: data.status, // status: "pending", "approved", "rejected"
+          message: data.message || `Account verification ${data.status}`,
+          read: false,
+          timestamp: new Date(),
         };
 
-        setNotifications((prev) => [formattedData, ...prev]);
-        toast.info(data.message, { autoClose: 5000 }); // Show toast
+        setNotifications((prev) => {
+          // If this is an approval or rejection, remove any pending notification for this seller
+          if (data.status === "approved" || data.status === "rejected") {
+            return [
+              formattedData,
+              ...prev.filter(
+                (notif) =>
+                  !(
+                    notif.type === "account_verification" &&
+                    notif.sellerId === data.sellerId &&
+                    notif.verificationStatus === "pending"
+                  )
+              ),
+            ];
+          }
+          // Otherwise, just add the new notification
+          return [formattedData, ...prev];
+        });
+
+        toast.info(`Seller account ${data.status}: ${data.sellerId}`, {
+          autoClose: 5000,
+        });
       });
     }
 
     // Cleanup on unmount
     return () => {
-      socket.off("sellerRegistered");
+      socket.off("accountVerification");
     };
   }, [isAdmin]);
 

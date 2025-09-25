@@ -18,6 +18,7 @@ import SubcategoryDetails from "../pages/SubcategoryDetails";
 import ProductDetails from "../pages/ProductDetails";
 import AllUsers from "../pages/AllUsers";
 import UserDetails from "../pages/UserDetails";
+import EditUser from "../pages/EditUser";
 import AdminDashboard from "../components/AdminDashboard";
 import PendingApprovals from "../pages/PendingApprovals";
 import Notifications from "../pages/Notifications";
@@ -61,7 +62,8 @@ const AllRoutes = () => {
         <Route path="/categories/:id" element={<CategoryDetails />} />
         <Route path="/subcategories/:id" element={<SubcategoryDetails />} />
         <Route path="/all-users" element={<AllUsers />} />
-        <Route path="/users/:id" element={<UserDetails />} />
+        <Route path="/all-users/:id" element={<UserDetails />} />
+        <Route path="/all-users/edit/:id" element={<EditUser />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/approvals" element={<PendingApprovals />} />
         <Route path="/notifications" element={<Notifications />} />

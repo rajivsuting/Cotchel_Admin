@@ -31,7 +31,7 @@ const SellerTransactions = () => {
       });
 
       const response = await axios.get(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/admin/transactions/seller/${sellerId}?${params}`
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/admin/transactions/seller/${sellerId}?${params}`
       );
 
       const {

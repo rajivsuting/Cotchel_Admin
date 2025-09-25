@@ -24,7 +24,7 @@ const TransactionDetails = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/admin/transactions/${id}`
+          `https://starfish-app-6q6ot.ondigitalocean.app/api/admin/transactions/${id}`
         );
         setTransaction(response.data.data);
       } catch (err) {

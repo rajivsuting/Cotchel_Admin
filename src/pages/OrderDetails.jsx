@@ -61,7 +61,7 @@ const OrderDetails = () => {
     const fetchOrderDetails = async () => {
       try {
         const response = await axios.get(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/orders/${orderId}`,
+          `https://starfish-app-6q6ot.ondigitalocean.app/api/orders/${orderId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,

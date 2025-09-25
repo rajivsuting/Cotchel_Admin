@@ -15,7 +15,7 @@ import {
   Home,
 } from "lucide-react";
 
-const API_BASE_URL = "https://cotchel-server-tvye7.ondigitalocean.app/api";
+const API_BASE_URL = "https://starfish-app-6q6ot.ondigitalocean.app/api";
 
 // Optimized debounce hook with cleanup
 const useDebounce = (value, delay = 500) => {

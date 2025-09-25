@@ -40,7 +40,7 @@ const Setting = () => {
   const fetchAdmins = async () => {
     try {
       const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/admin/admins",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/admins",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -69,7 +69,7 @@ const Setting = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/admin/settings/platform",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/settings/platform",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -127,7 +127,7 @@ const Setting = () => {
 
     try {
       await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/admin/create-admin",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/create-admin",
         {
           fullName: newAdmin.fullName,
           email: newAdmin.email,
@@ -168,7 +168,7 @@ const Setting = () => {
   const handleDeleteAdmin = async (adminId) => {
     try {
       await axios.delete(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/admin/${adminId}`,
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/admin/${adminId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -192,7 +192,7 @@ const Setting = () => {
     try {
       if (activeTab === 0) {
         await axios.post(
-          "https://cotchel-server-tvye7.ondigitalocean.app/api/admin/settings/platform",
+          "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/settings/platform",
           {
             platformFeePercentage: settings.commissionRate,
           },

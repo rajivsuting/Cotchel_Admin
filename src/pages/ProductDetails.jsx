@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useAuth } from "../contexts/AuthContext";
 import {
   ArrowLeft,
   Edit,
@@ -21,6 +21,7 @@ import { format, formatDistanceToNow } from "date-fns"; // For human-readable da
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { api } = useAuth();
   const [product, setProduct] = useState(null);
   const [editableProduct, setEditableProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,10 +36,9 @@ const ProductDetails = () => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/products/get/${id}`,
-          { params: { populate: "category,subCategory,user,reviews" } }
-        );
+        const response = await api.get(`/api/products/get/${id}`, {
+          params: { populate: "category,subCategory,user,reviews" },
+        });
 
         const data = response.data.product;
         const productData = {
@@ -76,8 +76,10 @@ const ProductDetails = () => {
         setEditableProduct(productData);
         setError(null);
       } catch (err) {
-        setError("Failed to load product details.");
-        console.error(err);
+        console.error("Error fetching product details:", err);
+        setError(
+          err.response?.data?.message || "Failed to load product details."
+        );
       } finally {
         setLoading(false);
       }
@@ -89,50 +91,44 @@ const ProductDetails = () => {
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await axios.delete(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/products/${id}`
-        );
+        await api.delete(`/api/products/delete/${id}`);
         setSuccess("Product deleted successfully.");
         setTimeout(() => navigate("/products"), 1500);
       } catch (err) {
-        setError("Failed to delete product.");
-        console.error(err);
+        console.error("Error deleting product:", err);
+        setError(err.response?.data?.message || "Failed to delete product.");
       }
     }
   };
 
   const handleToggleStatus = async () => {
     try {
-      const response = await axios.patch(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/products/${id}`,
-        { isActive: !product.isActive }
-      );
+      const response = await api.put(`/api/products/${id}`, {
+        isActive: !product.isActive,
+      });
       setProduct((prev) => ({
         ...prev,
-        isActive: response.data.product.isActive,
+        isActive: response.data.data.isActive,
       }));
       setEditableProduct((prev) => ({
         ...prev,
-        isActive: response.data.product.isActive,
+        isActive: response.data.data.isActive,
       }));
       setSuccess(
         `Product ${
-          response.data.product.isActive ? "activated" : "deactivated"
+          response.data.data.isActive ? "activated" : "deactivated"
         } successfully.`
       );
     } catch (err) {
-      setError("Failed to update status.");
-      console.error(err);
+      console.error("Error updating product status:", err);
+      setError(err.response?.data?.message || "Failed to update status.");
     }
   };
 
   const handleFieldUpdate = async (field) => {
     try {
       const updateData = { [field]: editableProduct[field] };
-      await axios.patch(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/products/${id}`,
-        updateData
-      );
+      await api.put(`/api/products/${id}`, updateData);
       setProduct((prev) => ({ ...prev, [field]: editableProduct[field] }));
       setEditingField(null);
       setSuccess(
@@ -141,8 +137,8 @@ const ProductDetails = () => {
         } updated successfully.`
       );
     } catch (err) {
-      setError(`Failed to update ${field}.`);
-      console.error(err);
+      console.error(`Error updating ${field}:`, err);
+      setError(err.response?.data?.message || `Failed to update ${field}.`);
     }
   };
 
@@ -153,18 +149,15 @@ const ProductDetails = () => {
         .toString()
         .slice(-4)}`;
       duplicateData.title = `${duplicateData.title} (Copy)`;
-      const response = await axios.post(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/products`,
-        duplicateData
-      );
+      const response = await api.post(`/api/products`, duplicateData);
       setSuccess("Product duplicated successfully.");
       setTimeout(
         () => navigate(`/products/edit/${response.data.product._id}`),
         1500
       );
     } catch (err) {
-      setError("Failed to duplicate product.");
-      console.error(err);
+      console.error("Error duplicating product:", err);
+      setError(err.response?.data?.message || "Failed to duplicate product.");
     }
   };
 
@@ -173,18 +166,17 @@ const ProductDetails = () => {
       try {
         const updatedImages = [...product.images];
         updatedImages.splice(index, 1);
-        await axios.patch(
-          `https://cotchel-server-tvye7.ondigitalocean.app/api/products/${id}`,
-          { images: updatedImages }
-        );
+        await api.put(`/api/products/${id}`, {
+          images: updatedImages,
+        });
         setProduct((prev) => ({ ...prev, images: updatedImages }));
         setEditableProduct((prev) => ({ ...prev, images: updatedImages }));
         setSuccess("Image deleted successfully.");
         if (selectedImage >= updatedImages.length)
           setSelectedImage(updatedImages.length - 1);
       } catch (err) {
-        setError("Failed to delete image.");
-        console.error(err);
+        console.error("Error deleting image:", err);
+        setError(err.response?.data?.message || "Failed to delete image.");
       }
     }
   };
@@ -455,7 +447,7 @@ const ProductDetails = () => {
                       style={{ "--themeColor": themeColor }}
                       onClick={() => setEditingField("price")}
                     >
-                      ${product.price.toFixed(2)}
+                      ₹{product.price.toFixed(2)}
                     </p>
                   )}
                 </div>
@@ -499,7 +491,7 @@ const ProductDetails = () => {
                       onClick={() => setEditingField("compareAtPrice")}
                     >
                       {product.compareAtPrice
-                        ? `$${product.compareAtPrice.toFixed(2)}`
+                        ? `₹${product.compareAtPrice.toFixed(2)}`
                         : "N/A"}
                     </p>
                   )}

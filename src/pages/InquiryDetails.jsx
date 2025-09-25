@@ -29,7 +29,7 @@ const InquiryDetails = () => {
     try {
       setIsLoading(true);
       const response = await axios.get(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/inquiries/${id}`,
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/inquiries/${id}`,
         {
           withCredentials: true,
         }
@@ -55,7 +55,7 @@ const InquiryDetails = () => {
   const handleUpdateStatus = async (newStatus) => {
     try {
       const response = await axios.patch(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/inquiries/${id}/status`,
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/inquiries/${id}/status`,
         { status: newStatus },
         {
           withCredentials: true,
@@ -81,7 +81,7 @@ const InquiryDetails = () => {
     try {
       setIsSending(true);
       const response = await axios.post(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/inquiries/${id}/response`,
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/inquiries/${id}/response`,
         {
           message: responseMessage,
           subject: emailSubject,

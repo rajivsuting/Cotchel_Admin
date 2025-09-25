@@ -3,6 +3,7 @@ import axios from "axios";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 import {
   Search,
   Plus,
@@ -15,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-const SubcategoryRow = memo(({ subcategory, onDelete }) => (
+const SubcategoryRow = memo(({ subcategory, onDelete, onEdit }) => (
   <tr
     className="hover:bg-gray-50 transition-opacity duration-200 cursor-pointer"
     style={{ opacity: 0, animation: "fadeIn 0.3s forwards" }}
@@ -47,6 +48,7 @@ const SubcategoryRow = memo(({ subcategory, onDelete }) => (
       <div className="flex justify-end items-center space-x-2">
         <button
           className="p-1 rounded-md text-gray-500 hover:text-[#0c0b45] hover:bg-gray-100 transition-colors cursor-pointer"
+          onClick={() => onEdit(subcategory._id)}
           aria-label={`Edit ${subcategory.name}`}
         >
           <Edit size={18} />
@@ -94,6 +96,11 @@ const Subcategories = () => {
   const [addingSubcategory, setAddingSubcategory] = useState(false);
   const [addError, setAddError] = useState(null);
   const [addSuccess, setAddSuccess] = useState(false);
+  const [editingSubcategory, setEditingSubcategory] = useState(null);
+  const [editSubcategoryName, setEditSubcategoryName] = useState("");
+  const [editSubcategoryCategory, setEditSubcategoryCategory] = useState("");
+  const [editError, setEditError] = useState(null);
+  const [editSuccess, setEditSuccess] = useState(false);
 
   // Debounce search term
   useEffect(() => {
@@ -108,7 +115,7 @@ const Subcategories = () => {
   const fetchCategories = useCallback(async () => {
     try {
       const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/categories/all"
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/categories/all"
       );
       setCategories(response.data.data || []);
       console.log(response.data.data);
@@ -131,7 +138,7 @@ const Subcategories = () => {
       };
 
       const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/all",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/subcategories/all",
         { params }
       );
 
@@ -162,7 +169,7 @@ const Subcategories = () => {
 
     try {
       const response = await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/create",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/subcategories/create",
         {
           name: newSubcategoryName,
           category: newSubcategoryCategory,
@@ -188,16 +195,134 @@ const Subcategories = () => {
   };
 
   const handleDeleteSubcategory = async (id) => {
-    try {
-      await axios.delete(
-        `https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/${id}`
+    const subcategory = subcategories.find((sub) => sub._id === id);
+    const subcategoryName = subcategory ? subcategory.name : "this subcategory";
+
+    const result = await Swal.fire({
+      title: "Delete Subcategory",
+      text: `Are you sure you want to delete "${subcategoryName}"? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      customClass: {
+        popup: "w-96 p-4 bg-gray-100 rounded-lg shadow-lg",
+        icon: "w-12 h-12",
+        title: "text-lg font-bold text-gray-800",
+        htmlContainer: "text-sm text-gray-600",
+        actions: "flex justify-center gap-5",
+        confirmButton:
+          "bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700",
+        cancelButton:
+          "bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300",
+      },
+      buttonsStyling: false,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(
+          `https://starfish-app-6q6ot.ondigitalocean.app/api/subcategories/${id}`
+        );
+        setSubcategories((prev) => prev.filter((sub) => sub._id !== id));
+        fetchSubcategories();
+        Swal.fire({
+          title: "Deleted!",
+          text: "Subcategory has been deleted successfully.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+          customClass: {
+            popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+            icon: "w-12 h-12",
+            title: "text-lg font-bold text-gray-800",
+            htmlContainer: "text-sm text-gray-600",
+          },
+          buttonsStyling: false,
+        });
+      } catch (err) {
+        setError("Failed to delete subcategory. Please try again.");
+        console.error(err);
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to delete subcategory. Please try again.",
+          icon: "error",
+          confirmButtonText: "OK",
+          customClass: {
+            popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+            icon: "w-12 h-12",
+            title: "text-lg font-bold text-gray-800",
+            htmlContainer: "text-sm text-gray-600",
+            confirmButton:
+              "bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700",
+          },
+          buttonsStyling: false,
+        });
+      }
+    }
+  };
+
+  const handleEditSubcategory = (id) => {
+    const subcategory = subcategories.find((sub) => sub._id === id);
+    if (subcategory) {
+      setEditingSubcategory(id);
+      setEditSubcategoryName(subcategory.name);
+      setEditSubcategoryCategory(
+        subcategory.category?._id || subcategory.category
       );
-      setSubcategories((prev) => prev.filter((sub) => sub._id !== id));
+      setEditError(null);
+    }
+  };
+
+  const handleUpdateSubcategory = async (e) => {
+    e.preventDefault();
+    if (!editSubcategoryName.trim() || !editSubcategoryCategory) return;
+
+    try {
+      await axios.put(
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/subcategories/${editingSubcategory}`,
+        {
+          name: editSubcategoryName,
+          category: editSubcategoryCategory,
+        }
+      );
+
+      setSubcategories((prev) =>
+        prev.map((subcategory) =>
+          subcategory._id === editingSubcategory
+            ? {
+                ...subcategory,
+                name: editSubcategoryName,
+                category: categories.find(
+                  (cat) => cat._id === editSubcategoryCategory
+                ),
+              }
+            : subcategory
+        )
+      );
+
+      setEditingSubcategory(null);
+      setEditSubcategoryName("");
+      setEditSubcategoryCategory("");
+      setEditSuccess(true);
+      setTimeout(() => setEditSuccess(false), 3000);
       fetchSubcategories();
     } catch (err) {
-      setError("Failed to delete subcategory. Please try again.");
+      setEditError(
+        err.response?.data?.message ||
+          "Failed to update subcategory. Please try again."
+      );
       console.error(err);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSubcategory(null);
+    setEditSubcategoryName("");
+    setEditSubcategoryCategory("");
+    setEditError(null);
   };
 
   const handleSort = (field) => {
@@ -262,6 +387,13 @@ const Subcategories = () => {
           <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
             <Plus size={20} className="mr-2" />
             <p>Subcategory added successfully!</p>
+          </div>
+        )}
+
+        {editSuccess && (
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
+            <Edit size={20} className="mr-2" />
+            <p>Subcategory updated successfully!</p>
           </div>
         )}
 
@@ -353,6 +485,93 @@ const Subcategories = () => {
                   aria-label="Create subcategory"
                 >
                   {addingSubcategory ? "Creating..." : "Create Subcategory"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {editingSubcategory && (
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4 border-b border-gray-100 pb-2">
+              Edit Subcategory
+            </h2>
+            {editError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
+                <Trash2 size={20} className="mr-2 flex-shrink-0 mt-0.5" />
+                <p>{editError}</p>
+              </div>
+            )}
+            <form onSubmit={handleUpdateSubcategory} className="space-y-4">
+              <div>
+                <label
+                  htmlFor="editSubcategoryName"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Subcategory Name
+                </label>
+                <input
+                  id="editSubcategoryName"
+                  type="text"
+                  value={editSubcategoryName}
+                  onChange={(e) => setEditSubcategoryName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all"
+                  placeholder="Enter subcategory name"
+                  required
+                  aria-label="Subcategory name"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Subcategory name must be unique within its category.
+                </p>
+              </div>
+              <div>
+                <label
+                  htmlFor="editSubcategoryCategory"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Category
+                </label>
+                <select
+                  id="editSubcategoryCategory"
+                  value={editSubcategoryCategory}
+                  onChange={(e) => setEditSubcategoryCategory(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 appearance-none transition-all cursor-pointer"
+                  required
+                  aria-label="Select category"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Select the parent category for this subcategory.
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer"
+                  aria-label="Cancel edit"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    !editSubcategoryName.trim() || !editSubcategoryCategory
+                  }
+                  className={`px-4 py-2 text-sm font-medium text-white bg-[#0c0b45] rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0c0b45] focus:ring-offset-2 transition-colors cursor-pointer ${
+                    !editSubcategoryName.trim() || !editSubcategoryCategory
+                      ? "opacity-70 cursor-not-allowed"
+                      : ""
+                  }`}
+                  aria-label="Update subcategory"
+                >
+                  Update Subcategory
                 </button>
               </div>
             </form>
@@ -452,6 +671,7 @@ const Subcategories = () => {
                         key={subcategory._id}
                         subcategory={subcategory}
                         onDelete={handleDeleteSubcategory}
+                        onEdit={handleEditSubcategory}
                       />
                     ))}
               </tbody>

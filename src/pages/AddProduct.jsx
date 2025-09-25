@@ -1,1153 +1,1317 @@
 import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
 import {
   ChevronDown,
-  Image as ImageIcon,
   FileText,
-  Loader2,
-  Check,
+  FileSpreadsheet,
+  FileImage,
+  File,
   X,
-  ArrowLeft,
-  ArrowRight,
 } from "lucide-react";
-import Sidebar from "../components/Sidebar";
-import axios from "axios";
-import { toast } from "react-toastify";
 
-const colors = {
-  primary: "#2563eb",
-  secondary: "#4f46e5",
-  error: "#dc2626",
-  text: "#1f2937",
-  border: "#d1d5db",
-  background: "#f9fafb",
+const initialState = {
+  title: "",
+  description: "",
+  images: [],
+  featuredImage: "",
+  category: "",
+  subCategory: "",
+  quantityAvailable: 1,
+  price: "",
+  compareAtPrice: "",
+  keyHighLights: [""],
+  brand: "",
+  model: "",
+  lotSize: 1,
+  length: "",
+  breadth: "",
+  height: "",
+  weight: "",
+  files: [],
 };
 
-export const useDropdown = (items, options = {}) => {
-  const { singleSelect = false } = options;
-  const [input, setInput] = useState("");
-  const [filteredItems, setFilteredItems] = useState(items || []);
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [matchedItem, setMatchedItem] = useState(null);
-  const inputRef = useRef(null);
-  const dropdownRef = useRef(null);
+// Helper to upload files to the server using API endpoints
+const uploadFiles = async (endpoint, files, fieldName = "images") => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append(fieldName, file));
+  const response = await axios.post(endpoint, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    withCredentials: true,
+  });
+  return response.data;
+};
 
-  const resetSelection = () => setSelectedItems([]);
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setInput(value);
-    if (value) {
-      const filtered = items.filter(
-        (item) =>
-          item.name.toLowerCase().includes(value.toLowerCase()) &&
-          !selectedItems.some((selected) => selected._id === item._id)
-      );
-      setFilteredItems(filtered);
-      setMatchedItem(filtered[0] || null);
-    } else {
-      setFilteredItems(items.filter((item) => !selectedItems.includes(item)));
-      setMatchedItem(null);
-    }
-  };
+// Helper to get file type icon
+const getFileIcon = (fileName) => {
+  const extension = fileName.split(".").pop()?.toLowerCase();
 
-  const handleSelectItem = (item) => {
-    if (singleSelect) setSelectedItems([item]);
-    else if (!selectedItems.find((selected) => selected._id === item._id))
-      setSelectedItems((prev) => [...prev, item]);
-    setInput("");
-    setShowDropdown(false);
-    setMatchedItem(null);
-    inputRef.current?.blur();
-  };
+  switch (extension) {
+    case "pdf":
+      return <FileText className="w-5 h-5 text-red-500" />;
+    case "xls":
+    case "xlsx":
+    case "csv":
+      return <FileSpreadsheet className="w-5 h-5 text-green-600" />;
+    case "doc":
+    case "docx":
+      return <FileText className="w-5 h-5 text-blue-600" />;
+    case "ppt":
+    case "pptx":
+      return <FileImage className="w-5 h-5 text-orange-500" />;
+    default:
+      return <File className="w-5 h-5 text-gray-500" />;
+  }
+};
 
-  const handleRemoveItem = (itemToRemove) =>
-    setSelectedItems((prev) =>
-      prev.filter((item) => item._id !== itemToRemove._id)
-    );
+// Helper to get file type label
+const getFileTypeLabel = (fileName) => {
+  const extension = fileName.split(".").pop()?.toLowerCase();
 
-  const handleFocus = () => {
-    setShowDropdown(true);
-    setFilteredItems(
-      items.filter(
-        (item) => !selectedItems.some((selected) => selected._id === item._id)
-      )
-    );
-  };
-
-  const handleOutsideClick = (event) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target))
-      setShowDropdown(false);
-  };
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
-  return {
-    input,
-    filteredItems,
-    selectedItems,
-    showDropdown,
-    matchedItem,
-    setShowDropdown,
-    handleInputChange,
-    handleSelectItem,
-    handleRemoveItem,
-    handleFocus,
-    inputRef,
-    dropdownRef,
-    resetSelection,
-  };
+  switch (extension) {
+    case "pdf":
+      return "PDF Document";
+    case "xls":
+    case "xlsx":
+      return "Excel Spreadsheet";
+    case "csv":
+      return "CSV File";
+    case "doc":
+    case "docx":
+      return "Word Document";
+    case "ppt":
+    case "pptx":
+      return "PowerPoint Presentation";
+    default:
+      return "Document";
+  }
 };
 
 const AddProduct = () => {
+  const [form, setForm] = useState(initialState);
   const [categories, setCategories] = useState([]);
-  const [productTitle, setProductTitle] = useState("");
-  const [subcategories, setSubcategories] = useState([]);
-  const [errors, setErrors] = useState({});
-  const [price, setPrice] = useState("");
-  const [compareAtPrice, setCompareAtPrice] = useState("");
-  const [quantityAvailable, setQuantityAvailable] = useState("");
-  const [highlights, setHighlights] = useState([""]);
-  const [uploadedImages, setUploadedImages] = useState([]);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
-  const [description, setDescription] = useState("");
-  const [lotSize, setLotSize] = useState("");
-  const [length, setLength] = useState("");
-  const [breadth, setBreadth] = useState("");
-  const [height, setHeight] = useState("");
-  const [weight, setWeight] = useState("");
-  const [featuredImage, setFeaturedImage] = useState("");
+  const [subCategories, setSubCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const textAreaRefs = useRef([]);
-  const categoryDropdown = useDropdown(categories, { singleSelect: true });
-  const subcategoryDropdown = useDropdown(subcategories, {
-    singleSelect: true,
-  });
-  const [isDraggingFeatured, setIsDraggingFeatured] = useState(false);
-  const [isDraggingImages, setIsDraggingImages] = useState(false);
-  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
-  const [uploadLoading, setUploadLoading] = useState({
-    featured: false,
-    images: false,
-    files: false,
-  });
-  const [uploadError, setUploadError] = useState({
-    featured: null,
-    images: null,
-    files: null,
-  });
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [subcategoryDropdownOpen, setSubcategoryDropdownOpen] = useState(false);
+  const [categoryInput, setCategoryInput] = useState("");
+  const [subcategoryInput, setSubcategoryInput] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const isCategoryOptionClicking = useRef(false);
+  const isSubcategoryOptionClicking = useRef(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const res = await axios.get(
-          "https://cotchel-server-tvye7.ondigitalocean.app/api/categories/all"
+          "https://starfish-app-6q6ot.ondigitalocean.app/api/categories/all"
         );
         setCategories(res.data.data || []);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
+      } catch (err) {
+        setError("Failed to fetch categories");
       }
     };
     fetchCategories();
   }, []);
 
   useEffect(() => {
-    const fetchSubcategories = async () => {
-      if (categoryDropdown.selectedItems.length > 0) {
-        try {
-          const categoryId = categoryDropdown.selectedItems[0]._id;
-          const res = await axios.get(
-            `https://cotchel-server-tvye7.ondigitalocean.app/api/subcategories/${categoryId}`
-          );
-          setSubcategories(res.data.data || []);
-        } catch (error) {
-          console.error("Error fetching subcategories:", error);
-        }
-      }
-    };
-    fetchSubcategories();
-  }, [categoryDropdown.selectedItems]);
+    if (!form.category) return setSubCategories([]);
+    const selected = categories.find((cat) => cat._id === form.category);
+    setSubCategories(selected?.subCategories || []);
+  }, [form.category, categories]);
 
-  const handleKeyDownKeyHighlight = (e, index) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const updatedHighlights = [...highlights];
-      updatedHighlights.splice(index + 1, 0, "");
-      setHighlights(updatedHighlights);
-      setTimeout(() => textAreaRefs.current[index + 1]?.focus(), 0);
-    }
-    if (
-      e.key === "Backspace" &&
-      highlights[index] === "" &&
-      highlights.length > 1
-    ) {
-      e.preventDefault();
-      const updatedHighlights = [...highlights];
-      updatedHighlights.splice(index, 1);
-      setHighlights(updatedHighlights);
-      setTimeout(
-        () => index > 0 && textAreaRefs.current[index - 1]?.focus(),
-        0
-      );
-    }
-  };
-
-  const handleChangeKeyHighlight = (e, index) => {
-    const updatedHighlights = [...highlights];
-    updatedHighlights[index] = e.target.value;
-    setHighlights(updatedHighlights);
-  };
-
-  const handleNumericInput = (setter) => (e) => {
-    const value = e.target.value;
-    if (/^\d*\.?\d*$/.test(value)) setter(value);
-  };
-
-  const validateFile = (file, type = "image") => {
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return "File size should be less than 10MB";
-    }
-
-    if (type === "image") {
-      const validTypes = ["image/jpeg", "image/png", "image/gif"];
-      if (!validTypes.includes(file.type)) {
-        return "Only JPG, PNG and GIF files are allowed";
-      }
+  useEffect(() => {
+    if (form.category) {
+      const selected = categories.find((cat) => cat._id === form.category);
+      setCategoryInput(selected ? selected.name : "");
     } else {
-      const validTypes = [
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "text/csv",
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-powerpoint",
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      ];
-      if (!validTypes.includes(file.type)) {
-        return "Only XLS, CSV, PDF, DOC, DOCX, PPT, PPTX files are allowed";
+      setCategoryInput("");
+    }
+  }, [form.category, categories]);
+
+  useEffect(() => {
+    if (form.subCategory) {
+      const selected = subCategories.find(
+        (sub) => sub._id === form.subCategory
+      );
+      setSubcategoryInput(selected ? selected.name : "");
+    } else {
+      setSubcategoryInput("");
+    }
+  }, [form.subCategory, subCategories]);
+
+  // Add beforeunload event listener to warn about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue =
+          "You have unsaved changes. Are you sure you want to leave?";
+        return "You have unsaved changes. Are you sure you want to leave?";
       }
-    }
-
-    return null;
-  };
-
-  const handleFeaturedImage = async (file) => {
-    if (!file) return;
-
-    const error = validateFile(file, "image");
-    if (error) {
-      setUploadError((prev) => ({ ...prev, featured: error }));
-      return;
-    }
-
-    setUploadLoading((prev) => ({ ...prev, featured: true }));
-    setUploadError((prev) => ({ ...prev, featured: null }));
-
-    const formData = new FormData();
-    formData.append("images", file);
-
-    try {
-      const response = await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/image/upload",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      setFeaturedImage(response.data.imageUrls[0]);
-      toast.success("Featured image uploaded successfully");
-    } catch (error) {
-      console.error("Error uploading featured image:", error);
-      setUploadError((prev) => ({
-        ...prev,
-        featured: error.response?.data?.message || "Error uploading image",
-      }));
-      toast.error("Failed to upload featured image");
-    } finally {
-      setUploadLoading((prev) => ({ ...prev, featured: false }));
-    }
-  };
-
-  const handleImageUpload = async (files) => {
-    if (uploadedImages.length + files.length > 10) {
-      setUploadError((prev) => ({
-        ...prev,
-        images: "Maximum 10 images allowed",
-      }));
-      return;
-    }
-
-    for (const file of files) {
-      const error = validateFile(file, "image");
-      if (error) {
-        setUploadError((prev) => ({ ...prev, images: error }));
-        return;
-      }
-    }
-
-    setUploadLoading((prev) => ({ ...prev, images: true }));
-    setUploadError((prev) => ({ ...prev, images: null }));
-
-    const formData = new FormData();
-    Array.from(files).forEach((file) => formData.append("images", file));
-
-    try {
-      const response = await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/image/upload",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      setUploadedImages((prev) => [...prev, ...response.data.imageUrls]);
-      toast.success(
-        `${files.length} image${
-          files.length === 1 ? "" : "s"
-        } uploaded successfully`
-      );
-    } catch (error) {
-      console.error("Error uploading images:", error);
-      setUploadError((prev) => ({
-        ...prev,
-        images: error.response?.data?.message || "Error uploading images",
-      }));
-      toast.error("Failed to upload images");
-    } finally {
-      setUploadLoading((prev) => ({ ...prev, images: false }));
-    }
-  };
-
-  const handleFilesUpload = async (files) => {
-    for (const file of files) {
-      const error = validateFile(file, "document");
-      if (error) {
-        setUploadError((prev) => ({ ...prev, files: error }));
-        return;
-      }
-    }
-
-    setUploadLoading((prev) => ({ ...prev, files: true }));
-    setUploadError((prev) => ({ ...prev, files: null }));
-
-    const formData = new FormData();
-    Array.from(files).forEach((file) => formData.append("files", file));
-
-    try {
-      const response = await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/image/upload-file",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      setUploadedFiles((prev) => [...prev, ...response.data.fileUrls]);
-      toast.success(
-        `${files.length} file${
-          files.length === 1 ? "" : "s"
-        } uploaded successfully`
-      );
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      setUploadError((prev) => ({
-        ...prev,
-        files: error.response?.data?.message || "Error uploading files",
-      }));
-      toast.error("Failed to upload files");
-    } finally {
-      setUploadLoading((prev) => ({ ...prev, files: false }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateStep(currentStep)) return;
-    setLoading(true);
-
-    const productData = {
-      title: productTitle,
-      description,
-      images: uploadedImages,
-      category: categoryDropdown.selectedItems[0]._id,
-      subCategory: subcategoryDropdown.selectedItems[0]._id,
-      quantityAvailable,
-      price,
-      compareAtPrice,
-      files: uploadedFiles,
-      featuredImage,
-      keyHighLights: highlights,
-      model,
-      brand,
-      lotSize,
-      length,
-      breadth,
-      height,
-      weight,
     };
 
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Function to check if form has unsaved changes
+  const checkForUnsavedChanges = (currentForm) => {
+    return (
+      currentForm.title !== initialState.title ||
+      currentForm.description !== initialState.description ||
+      currentForm.category !== initialState.category ||
+      currentForm.subCategory !== initialState.subCategory ||
+      currentForm.price !== initialState.price ||
+      currentForm.compareAtPrice !== initialState.compareAtPrice ||
+      currentForm.quantityAvailable !== initialState.quantityAvailable ||
+      currentForm.lotSize !== initialState.lotSize ||
+      currentForm.length !== initialState.length ||
+      currentForm.breadth !== initialState.breadth ||
+      currentForm.height !== initialState.height ||
+      currentForm.weight !== initialState.weight ||
+      currentForm.brand !== initialState.brand ||
+      currentForm.model !== initialState.model ||
+      currentForm.featuredImage !== initialState.featuredImage ||
+      currentForm.images.length > 0 ||
+      currentForm.files.length > 0 ||
+      JSON.stringify(currentForm.keyHighLights) !==
+        JSON.stringify(initialState.keyHighLights)
+    );
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const newForm = { ...form, [name]: value };
+    setForm(newForm);
+    setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+  };
+
+  const handleHighlightChange = (idx, value) => {
+    setForm((prev) => {
+      const highlights = [...prev.keyHighLights];
+      highlights[idx] = value;
+      const newForm = { ...prev, keyHighLights: highlights };
+      setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+      return newForm;
+    });
+  };
+
+  const addHighlight = () => {
+    if (form.keyHighLights.length < 10) {
+      setForm((prev) => {
+        const newForm = {
+          ...prev,
+          keyHighLights: [...prev.keyHighLights, ""],
+        };
+        setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+        return newForm;
+      });
+    }
+  };
+  const removeHighlight = (idx) => {
+    setForm((prev) => {
+      const highlights = prev.keyHighLights.filter((_, i) => i !== idx);
+      const newForm = { ...prev, keyHighLights: highlights };
+      setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+      return newForm;
+    });
+  };
+
+  // Immediate upload for featured image
+  const handleFeaturedImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true);
+    setError(null);
     try {
-      await axios.post(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/products",
-        productData
+      const data = await uploadFiles(
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/image/upload",
+        [file]
       );
-      toast.success("Product created successfully!");
-      setProductTitle("");
-      setDescription("");
-      setUploadedImages([]);
-      setUploadedFiles([]);
-      setQuantityAvailable("");
-      setPrice("");
-      setCompareAtPrice("");
-      setHighlights([""]);
-      setBrand("");
-      setModel("");
-      setLotSize("");
-      setLength("");
-      setBreadth("");
-      setHeight("");
-      setWeight("");
-      setFeaturedImage("");
-      categoryDropdown.resetSelection();
-      subcategoryDropdown.resetSelection();
-    } catch (error) {
-      toast.error("Failed to create product. Please try again.");
-      console.error("Error creating product:", error.message);
+      if (data.imageUrls && data.imageUrls.length > 0) {
+        setForm((prev) => {
+          const newForm = { ...prev, featuredImage: data.imageUrls[0] };
+          setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+          return newForm;
+        });
+      } else {
+        setError("Failed to upload featured image");
+      }
+    } catch (err) {
+      setError("Failed to upload featured image");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDragOverFeatured = (e) => {
-    e.preventDefault();
-    setIsDraggingFeatured(true);
-    e.dataTransfer.dropEffect = "copy";
-  };
-
-  const handleDragLeaveFeatured = (e) => {
-    e.preventDefault();
-    setIsDraggingFeatured(false);
-  };
-
-  const handleDragOverImages = (e) => {
-    e.preventDefault();
-    setIsDraggingImages(true);
-    e.dataTransfer.dropEffect = "copy";
-  };
-
-  const handleDragLeaveImages = (e) => {
-    e.preventDefault();
-    setIsDraggingImages(false);
-  };
-
-  const handleDragOverFiles = (e) => {
-    e.preventDefault();
-    setIsDraggingFiles(true);
-    e.dataTransfer.dropEffect = "copy";
-  };
-
-  const handleDragLeaveFiles = (e) => {
-    e.preventDefault();
-    setIsDraggingFiles(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDraggingImages(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) handleImageUpload(files);
-  };
-
-  const getFileType = (filename) => {
-    const ext = filename.split(".").pop().toLowerCase();
-    switch (ext) {
-      case "xls":
-      case "xlsx":
-        return "Excel Spreadsheet";
-      case "csv":
-        return "CSV File";
-      case "pdf":
-        return "PDF Document";
-      case "doc":
-      case "docx":
-        return "Word Document";
-      case "ppt":
-      case "pptx":
-        return "PowerPoint Presentation";
-      default:
-        return "Document";
+  // Immediate upload for images
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files);
+    if (form.images.length + files.length > 10) {
+      setError("Maximum 10 images allowed");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await uploadFiles(
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/image/upload",
+        files
+      );
+      if (data.imageUrls && data.imageUrls.length > 0) {
+        setForm((prev) => {
+          const newForm = {
+            ...prev,
+            images: [...prev.images, ...data.imageUrls],
+          };
+          setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+          return newForm;
+        });
+      } else {
+        setError("Failed to upload images");
+      }
+    } catch (err) {
+      setError("Failed to upload images");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Immediate upload for file attachments
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await uploadFiles(
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/image/upload-file",
+        files,
+        "files"
+      );
+      if (data.fileUrls && data.fileUrls.length > 0) {
+        setForm((prev) => {
+          const newForm = {
+            ...prev,
+            files: [...prev.files, ...data.fileUrls],
+          };
+          setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+          return newForm;
+        });
+      } else {
+        setError("Failed to upload files");
+      }
+    } catch (err) {
+      setError("Failed to upload files");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeImage = (idx) => {
+    setForm((prev) => {
+      const images = prev.images.filter((_, i) => i !== idx);
+      const newForm = { ...prev, images };
+      setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+      return newForm;
+    });
+  };
+  const removeFile = (idx) => {
+    setForm((prev) => {
+      const files = prev.files.filter((_, i) => i !== idx);
+      const newForm = { ...prev, files };
+      setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+      return newForm;
+    });
+  };
+
+  const validateForm = () => {
+    // Auto-trim and filter out empty highlights
+    const trimmedHighlights = form.keyHighLights
+      .map((h) => h.trim())
+      .filter((h) => h);
+    let errors = {};
+    if (!form.title.trim()) errors.title = "Title is required";
+    if (!form.brand.trim()) errors.brand = "Brand is required";
+    if (!form.model.trim()) errors.model = "Model is required";
+    if (!form.category) errors.category = "Category is required";
+    if (!form.subCategory) errors.subCategory = "Subcategory is required";
+    if (!form.price || isNaN(form.price) || Number(form.price) < 0)
+      errors.price = "Valid price is required";
+    if (
+      form.compareAtPrice &&
+      (isNaN(form.compareAtPrice) || Number(form.compareAtPrice) < 0)
+    )
+      errors.compareAtPrice = "Compare At Price must be a positive number";
+    if (form.compareAtPrice && Number(form.compareAtPrice) < Number(form.price))
+      errors.compareAtPrice =
+        "Compare At Price must be greater than or equal to Price";
+    if (
+      !form.quantityAvailable ||
+      isNaN(form.quantityAvailable) ||
+      Number(form.quantityAvailable) < 1
+    )
+      errors.quantityAvailable = "Valid quantity is required";
+    if (!form.lotSize || isNaN(form.lotSize) || Number(form.lotSize) < 1)
+      errors.lotSize = "Lot size is required";
+    if (!form.length || isNaN(form.length) || Number(form.length) < 0)
+      errors.length = "Valid length is required";
+    if (!form.breadth || isNaN(form.breadth) || Number(form.breadth) < 0)
+      errors.breadth = "Valid breadth is required";
+    if (!form.height || isNaN(form.height) || Number(form.height) < 0)
+      errors.height = "Valid height is required";
+    if (!form.weight || isNaN(form.weight) || Number(form.weight) < 0)
+      errors.weight = "Valid weight is required";
+    if (!form.description.trim())
+      errors.description = "Description is required";
+    if (!trimmedHighlights.length)
+      errors.keyHighLights = "At least one key highlight is required";
+    if (trimmedHighlights.some((h) => h.length > 100))
+      errors.keyHighLights = "Each key highlight must be under 100 characters";
+    if (!form.featuredImage)
+      errors.featuredImage = "Featured image is required";
+    if (form.images.length > 10)
+      errors.images = "Maximum 10 other images allowed";
+
+    // Check if images are File objects before validation (for new uploads)
+    if (
+      form.images.some(
+        (img) =>
+          img &&
+          typeof img === "object" &&
+          img instanceof File &&
+          img.size > 2 * 1024 * 1024
+      )
+    )
+      errors.images = "Each image must be under 2MB";
+    if (
+      form.images.some(
+        (img) =>
+          img &&
+          typeof img === "object" &&
+          img instanceof File &&
+          !["image/jpeg", "image/png"].includes(img.type)
+      )
+    )
+      errors.images = "Only JPG/PNG images allowed";
+
+    // Check if featured image is File object before validation (for new uploads)
+    if (
+      form.featuredImage &&
+      typeof form.featuredImage === "object" &&
+      form.featuredImage instanceof File &&
+      form.featuredImage.size > 2 * 1024 * 1024
+    )
+      errors.featuredImage = "Featured image must be under 2MB";
+    if (
+      form.featuredImage &&
+      typeof form.featuredImage === "object" &&
+      form.featuredImage instanceof File &&
+      !["image/jpeg", "image/png"].includes(form.featuredImage.type)
+    )
+      errors.featuredImage = "Featured image must be JPG or PNG";
+
+    // Check if files are File objects before validation (for new uploads)
+    if (
+      form.files.some(
+        (file) =>
+          file &&
+          typeof file === "object" &&
+          file instanceof File &&
+          file.size > 5 * 1024 * 1024
+      )
+    )
+      errors.files = "Each file must be under 5MB";
+    if (
+      form.files.some(
+        (file) =>
+          file &&
+          typeof file === "object" &&
+          file instanceof File &&
+          ![
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/csv",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          ].includes(file.type)
+      )
+    )
+      errors.files = "Invalid file type for attachments";
+
+    console.log("Validation errors:", errors, form);
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    console.log("submit");
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!validateForm()) {
+      return;
+    }
+    console.log("submit2");
+    setLoading(true);
+    try {
+      // Prepare payload for backend
+      const { files, ...rest } = form;
+      const payload = {
+        ...rest,
+        files: files, // Send as 'files' to match server expectation
+        price: Number(form.price),
+        compareAtPrice: form.compareAtPrice
+          ? Number(form.compareAtPrice)
+          : undefined,
+        quantityAvailable: Number(form.quantityAvailable),
+        lotSize: form.lotSize ? Number(form.lotSize) : undefined,
+        length: Number(form.length),
+        breadth: Number(form.breadth),
+        height: Number(form.height),
+        weight: Number(form.weight),
+      };
+      console.log("Payload being sent:", payload);
+      console.log("Files in payload:", payload.files);
+      await axios.post(
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/products",
+        payload
+      );
+      setSuccess("Product added successfully!");
+      setForm(initialState);
+      setValidationErrors({});
+      setHasUnsavedChanges(false);
+    } catch (err) {
+      setError("Failed to add product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredCategories = categories.filter((cat) =>
+    cat.name.toLowerCase().includes(categoryInput.toLowerCase())
+  );
+  const filteredSubCategories = subCategories.filter((sub) =>
+    sub.name.toLowerCase().includes(subcategoryInput.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
-          <div className="px-8 py-10">
-            <h1 className="text-3xl font-bold text-gray-900 mb-10 flex items-center">
-              <span className="bg-indigo-100 text-indigo-600 p-2 rounded-lg mr-3">
-                <ImageIcon className="w-6 h-6" />
-              </span>
-              Add New Product
-            </h1>
-            <form onSubmit={handleSubmit} className="space-y-16">
-              {/* Basic Information */}
-              <div className="space-y-8">
-                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
-                  <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3">
-                    <FileText className="w-5 h-5" />
+    <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8 mt-8">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">Add Product</h2>
+      {error && (
+        <div className="bg-red-100 text-red-800 p-3 rounded mb-4">{error}</div>
+      )}
+      {success && (
+        <div className="bg-green-100 text-green-800 p-3 rounded mb-4">
+          {success}
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-4">
+          Product Details
+        </h3>
+        <div className="space-y-6 mb-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Title *
+            </label>
+            <input
+              type="text"
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30"
+            />
+            {validationErrors.title && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.title}
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category *
+              </label>
+              {form.category && (
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="inline-flex items-center bg-[#0c0b45] text-white text-xs px-2 py-1 rounded-full">
+                    {categories.find((cat) => cat._id === form.category)
+                      ?.name || form.category}
+                    <button
+                      type="button"
+                      className="ml-2 text-white hover:text-gray-200 focus:outline-none"
+                      onClick={() => {
+                        setForm((prev) => {
+                          const newForm = {
+                            ...prev,
+                            category: "",
+                            subCategory: "",
+                          };
+                          setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                          return newForm;
+                        });
+                        setCategoryInput("");
+                      }}
+                      aria-label="Clear category"
+                    >
+                      ×
+                    </button>
                   </span>
-                  Basic Information
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <InputField
-                    label="Product Title"
-                    value={productTitle}
-                    onChange={(e) => setProductTitle(e.target.value)}
-                    error={errors.productTitle}
-                    required
-                    placeholder="Enter product title"
-                  />
-                  <DropdownInput
-                    label="Category"
-                    dropdown={categoryDropdown}
-                    singleSelect
-                    error={errors.category}
-                  />
-                  <DropdownInput
-                    label="Subcategory"
-                    dropdown={subcategoryDropdown}
-                    singleSelect
-                    error={errors.subcategory}
-                  />
                 </div>
+              )}
+              <div className="w-full flex items-center relative">
+                <input
+                  type="text"
+                  value={categoryInput}
+                  onChange={(e) => {
+                    setCategoryInput(e.target.value);
+                    setCategoryDropdownOpen(true);
+                  }}
+                  onFocus={() => setCategoryDropdownOpen(true)}
+                  onBlur={() =>
+                    setTimeout(() => {
+                      if (isCategoryOptionClicking.current) {
+                        isCategoryOptionClicking.current = false;
+                        return;
+                      }
+                      setCategoryDropdownOpen(false);
+                      setCategoryInput("");
+                    }, 150)
+                  }
+                  placeholder="Select category..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30"
+                />
+                <ChevronDown className="w-4 h-4 text-gray-400 ml-2 absolute right-3 pointer-events-none" />
               </div>
-
-              {/* Pricing & Inventory */}
-              <div className="space-y-8">
-                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
-                  <span className="bg-green-100 text-green-600 p-2 rounded-lg mr-3">
-                    <FileText className="w-5 h-5" />
+              {categoryDropdownOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                  {filteredCategories.length === 0 && (
+                    <div className="px-3 py-2 text-gray-400">
+                      No results found
+                    </div>
+                  )}
+                  {filteredCategories.map((cat) => (
+                    <div
+                      key={cat._id}
+                      className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                        form.category === cat._id
+                          ? "bg-gray-100 font-semibold"
+                          : ""
+                      }`}
+                      onMouseDown={() => {
+                        isCategoryOptionClicking.current = true;
+                        setForm((prev) => {
+                          const newForm = {
+                            ...prev,
+                            category: cat._id,
+                            subCategory: "",
+                          };
+                          setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                          return newForm;
+                        });
+                        setCategoryDropdownOpen(false);
+                        setCategoryInput("");
+                        setTimeout(() => {
+                          isCategoryOptionClicking.current = false;
+                        }, 0);
+                      }}
+                    >
+                      {cat.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {validationErrors.category && (
+                <div className="text-red-500 text-xs mt-1">
+                  {validationErrors.category}
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Subcategory *
+              </label>
+              {form.subCategory && (
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="inline-flex items-center bg-[#0c0b45] text-white text-xs px-2 py-1 rounded-full">
+                    {subCategories.find((sub) => sub._id === form.subCategory)
+                      ?.name || form.subCategory}
+                    <button
+                      type="button"
+                      className="ml-2 text-white hover:text-gray-200 focus:outline-none"
+                      onClick={() => {
+                        setForm((prev) => {
+                          const newForm = { ...prev, subCategory: "" };
+                          setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                          return newForm;
+                        });
+                        setSubcategoryInput("");
+                      }}
+                      aria-label="Clear subcategory"
+                    >
+                      ×
+                    </button>
                   </span>
-                  Pricing & Inventory
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <InputField
-                    label="Price"
-                    type="number"
-                    value={price}
-                    onChange={handleNumericInput(setPrice)}
-                    error={errors.price}
-                    required
-                    placeholder="e.g., 99.99"
-                  />
-                  <InputField
-                    label="Compare at Price"
-                    type="number"
-                    value={compareAtPrice}
-                    onChange={handleNumericInput(setCompareAtPrice)}
-                    error={errors.compareAtPrice}
-                    required
-                    placeholder="e.g., 129.99"
-                  />
-                  <InputField
-                    label="Quantity Available"
-                    type="number"
-                    value={quantityAvailable}
-                    onChange={handleNumericInput(setQuantityAvailable)}
-                    error={errors.quantityAvailable}
-                    required
-                    placeholder="e.g., 100"
-                  />
-                  <InputField
-                    label="Lot Size"
-                    type="number"
-                    value={lotSize}
-                    onChange={handleNumericInput(setLotSize)}
-                    error={errors.lotSize}
-                    required
-                    placeholder="e.g., 10"
-                  />
                 </div>
+              )}
+              <div className="w-full flex items-center relative">
+                <input
+                  type="text"
+                  value={subcategoryInput}
+                  onChange={(e) => {
+                    setSubcategoryInput(e.target.value);
+                    setSubcategoryDropdownOpen(true);
+                  }}
+                  onFocus={() => setSubcategoryDropdownOpen(true)}
+                  onBlur={() =>
+                    setTimeout(() => {
+                      if (isSubcategoryOptionClicking.current) {
+                        isSubcategoryOptionClicking.current = false;
+                        return;
+                      }
+                      setSubcategoryDropdownOpen(false);
+                      setSubcategoryInput("");
+                    }, 150)
+                  }
+                  placeholder="Select subcategory..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30"
+                />
+                <ChevronDown className="w-4 h-4 text-gray-400 ml-2 absolute right-3 pointer-events-none" />
               </div>
-
-              {/* Product Details */}
-              <div className="space-y-8">
-                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
-                  <span className="bg-purple-100 text-purple-600 p-2 rounded-lg mr-3">
-                    <FileText className="w-5 h-5" />
-                  </span>
-                  Product Details
-                </h2>
-                <div className="space-y-8">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Key Highlights <span className="text-red-500">*</span>
-                    </label>
-                    <div className="space-y-4 p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                      {highlights.map((highlight, index) => (
-                        <div key={index} className="flex items-start group">
-                          <span className="text-indigo-600 mr-3 mt-2 group-hover:text-indigo-700 transition-colors">
-                            •
-                          </span>
-                          <textarea
-                            className="w-full bg-transparent resize-none border-b border-gray-300 focus:border-indigo-500 focus:outline-none placeholder-gray-400 text-gray-700 py-2 transition-all duration-200"
-                            ref={(el) => (textAreaRefs.current[index] = el)}
-                            value={highlight}
-                            onChange={(e) => handleChangeKeyHighlight(e, index)}
-                            onKeyDown={(e) =>
-                              handleKeyDownKeyHighlight(e, index)
-                            }
-                            rows={1}
-                            placeholder={
-                              index === highlights.length - 1
-                                ? "Add a highlight"
-                                : ""
-                            }
-                            aria-label={`Highlight ${index + 1}`}
-                          />
-                        </div>
-                      ))}
+              {subcategoryDropdownOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                  {filteredSubCategories.length === 0 && (
+                    <div className="px-3 py-2 text-gray-400">
+                      No results found
                     </div>
-                    {errors.highlights && (
-                      <p className="text-red-500 text-sm mt-2">
-                        {errors.highlights}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <InputField
-                      label="Brand"
-                      value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      error={errors.brand}
-                      required
-                      placeholder="e.g., Nike"
-                    />
-                    <InputField
-                      label="Model"
-                      value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      error={errors.model}
-                      required
-                      placeholder="e.g., Air Max"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Product Description{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full p-6 border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                      rows={6}
-                      placeholder="Describe your product in detail..."
-                      aria-label="Product Description"
-                    />
-                    {errors.description && (
-                      <p className="text-red-500 text-sm mt-2">
-                        {errors.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <InputField
-                      label="Length (mm)"
-                      type="number"
-                      value={length}
-                      onChange={(e) => setLength(e.target.value)}
-                      error={errors.length}
-                      required
-                      placeholder="e.g., 200"
-                    />
-                    <InputField
-                      label="Breadth (mm)"
-                      type="number"
-                      value={breadth}
-                      onChange={(e) => setBreadth(e.target.value)}
-                      error={errors.breadth}
-                      required
-                      placeholder="e.g., 150"
-                    />
-                    <InputField
-                      label="Height (mm)"
-                      type="number"
-                      value={height}
-                      onChange={(e) => setHeight(e.target.value)}
-                      error={errors.height}
-                      required
-                      placeholder="e.g., 100"
-                    />
-                    <InputField
-                      label="Weight (gm)"
-                      type="number"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                      error={errors.weight}
-                      required
-                      placeholder="e.g., 500"
-                    />
-                  </div>
+                  )}
+                  {filteredSubCategories.map((sub) => (
+                    <div
+                      key={sub._id}
+                      className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                        form.subCategory === sub._id
+                          ? "bg-gray-100 font-semibold"
+                          : ""
+                      }`}
+                      onMouseDown={() => {
+                        isSubcategoryOptionClicking.current = true;
+                        setForm((prev) => {
+                          const newForm = { ...prev, subCategory: sub._id };
+                          setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                          return newForm;
+                        });
+                        setSubcategoryDropdownOpen(false);
+                        setSubcategoryInput("");
+                        setTimeout(() => {
+                          isSubcategoryOptionClicking.current = false;
+                        }, 0);
+                      }}
+                    >
+                      {sub.name}
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              {/* Media & Files */}
-              <div className="space-y-8">
-                <h2 className="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-4 flex items-center">
-                  <span className="bg-pink-100 text-pink-600 p-2 rounded-lg mr-3">
-                    <ImageIcon className="w-5 h-5" />
-                  </span>
-                  Media & Files
-                </h2>
-                <div className="space-y-10">
-                  {/* Media Upload Section */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-10">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                        <span className="bg-blue-100 text-blue-600 p-2 rounded-lg mr-3">
-                          <ImageIcon className="w-5 h-5" />
-                        </span>
-                        Media Upload
-                      </h3>
-                      <div className="text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-lg">
-                        All images should be at least 1000x1000px
-                      </div>
-                    </div>
-
-                    {/* Featured Image Upload */}
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <label className="text-sm font-medium text-gray-700">
-                          Featured Image <span className="text-red-500">*</span>
-                        </label>
-                        <span className="text-xs text-gray-500">
-                          PNG, JPG, GIF up to 10MB
-                        </span>
-                      </div>
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div
-                          className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer min-h-[200px] ${
-                            isDraggingFeatured
-                              ? "border-indigo-500 bg-indigo-50"
-                              : uploadError.featured
-                              ? "border-red-200 bg-red-50/30"
-                              : featuredImage
-                              ? "border-emerald-200 bg-emerald-50/30"
-                              : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30"
-                          }`}
-                          onDragOver={handleDragOverFeatured}
-                          onDragLeave={handleDragLeaveFeatured}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            setIsDraggingFeatured(false);
-                            handleFeaturedImage(e.dataTransfer.files[0]);
-                          }}
-                          onClick={() =>
-                            document
-                              .getElementById("featured-image-upload")
-                              .click()
-                          }
-                        >
-                          <input
-                            id="featured-image-upload"
-                            type="file"
-                            className="sr-only"
-                            onChange={(e) =>
-                              handleFeaturedImage(e.target.files[0])
-                            }
-                            aria-label="Upload featured image"
-                          />
-                          {!featuredImage ? (
-                            <>
-                              <div className="mb-4 p-4 bg-indigo-50 rounded-full">
-                                <ImageIcon className="w-8 h-8 text-indigo-500" />
-                              </div>
-                              <p className="text-sm font-medium text-gray-700">
-                                Drop your featured image here
-                              </p>
-                              <p className="mt-1 text-xs text-gray-500">
-                                or click to browse files
-                              </p>
-                            </>
-                          ) : (
-                            <div className="absolute inset-4 rounded-lg overflow-hidden group">
-                              <img
-                                src={featuredImage}
-                                alt="Featured Preview"
-                                className="w-full h-full object-cover rounded-lg"
-                              />
-                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFeaturedImage("");
-                                  }}
-                                  className="bg-white/10 backdrop-blur-sm text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-white/20 transition-colors duration-200"
-                                >
-                                  Replace Image
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {uploadLoading.featured && (
-                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="space-y-4">
-                          <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
-                            <h4 className="text-sm font-medium text-amber-800 mb-2">
-                              Image Guidelines
-                            </h4>
-                            <ul className="space-y-2 text-xs text-amber-700">
-                              <li className="flex items-center">
-                                <Check className="w-4 h-4 mr-2 text-amber-500" />
-                                Minimum resolution: 1000x1000px
-                              </li>
-                              <li className="flex items-center">
-                                <Check className="w-4 h-4 mr-2 text-amber-500" />
-                                Use a white or transparent background
-                              </li>
-                              <li className="flex items-center">
-                                <Check className="w-4 h-4 mr-2 text-amber-500" />
-                                Keep file size under 10MB
-                              </li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                      {uploadError.featured && (
-                        <p className="mt-2 text-sm text-red-600">
-                          {uploadError.featured}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Product Images Upload */}
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <label className="text-sm font-medium text-gray-700">
-                          Product Images <span className="text-red-500">*</span>
-                        </label>
-                        <span className="text-xs text-gray-500">
-                          Maximum 10 images
-                        </span>
-                      </div>
-                      <div
-                        className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all duration-200 cursor-pointer ${
-                          isDraggingImages
-                            ? "border-indigo-500 bg-indigo-50"
-                            : uploadedImages.length > 0
-                            ? "border-emerald-200 bg-emerald-50/30"
-                            : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30"
-                        }`}
-                        onDragOver={handleDragOverImages}
-                        onDragLeave={handleDragLeaveImages}
-                        onDrop={handleDrop}
-                        onClick={() =>
-                          document.getElementById("image-upload").click()
-                        }
-                      >
-                        <input
-                          id="image-upload"
-                          type="file"
-                          multiple
-                          className="sr-only"
-                          onChange={(e) => handleImageUpload(e.target.files)}
-                          aria-label="Upload product images"
-                        />
-                        <div className="mb-4 p-4 bg-indigo-50 rounded-full">
-                          <ImageIcon className="w-8 h-8 text-indigo-500" />
-                        </div>
-                        <p className="text-sm font-medium text-gray-700">
-                          {uploadedImages.length === 0
-                            ? "Drop your product images here"
-                            : `${uploadedImages.length} image${
-                                uploadedImages.length === 1 ? "" : "s"
-                              } uploaded`}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          or click to browse files
-                        </p>
-                      </div>
-                      {uploadedImages.length > 0 && (
-                        <div className="mt-6">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-medium text-gray-700">
-                                Product Images
-                              </h4>
-                              <span className="text-xs text-gray-500">
-                                ({uploadedImages.length}/10)
-                              </span>
-                            </div>
-                            {uploadedImages.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => setUploadedImages([])}
-                                className="text-xs text-red-600 hover:text-red-700 font-medium"
-                              >
-                                Remove All
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-4">
-                            {uploadedImages.map((image, index) => (
-                              <div
-                                key={index}
-                                className="relative aspect-square group rounded-lg overflow-hidden border border-gray-200"
-                              >
-                                <img
-                                  src={image}
-                                  alt={`Product ${index + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                  <button
-                                    onClick={() => {
-                                      setUploadedImages((prev) =>
-                                        prev.filter((_, i) => i !== index)
-                                      );
-                                    }}
-                                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2 bg-white/10 backdrop-blur-sm rounded-full hover:bg-white/20 transition-colors duration-200"
-                                    aria-label={`Remove image ${index + 1}`}
-                                  >
-                                    <X className="w-5 h-5 text-white" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* File Attachments Upload */}
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <label className="text-sm font-medium text-gray-700">
-                          Additional Files
-                        </label>
-                        <span className="text-xs text-gray-500">Optional</span>
-                      </div>
-                      <div
-                        className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-all duration-200 cursor-pointer ${
-                          isDraggingFiles
-                            ? "border-indigo-500 bg-indigo-50"
-                            : uploadedFiles.length > 0
-                            ? "border-emerald-200 bg-emerald-50/30"
-                            : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30"
-                        }`}
-                        onDragOver={handleDragOverFiles}
-                        onDragLeave={handleDragLeaveFiles}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          setIsDraggingFiles(false);
-                          handleFilesUpload(e.dataTransfer.files);
-                        }}
-                        onClick={() =>
-                          document.getElementById("file-upload").click()
-                        }
-                      >
-                        <input
-                          id="file-upload"
-                          type="file"
-                          multiple
-                          className="sr-only"
-                          onChange={(e) => handleFilesUpload(e.target.files)}
-                          aria-label="Upload files"
-                        />
-                        <div className="mb-4 p-4 bg-indigo-50 rounded-full">
-                          <FileText className="w-8 h-8 text-indigo-500" />
-                        </div>
-                        <p className="text-sm font-medium text-gray-700">
-                          {uploadedFiles.length === 0
-                            ? "Drop your files here"
-                            : `${uploadedFiles.length} file${
-                                uploadedFiles.length === 1 ? "" : "s"
-                              } uploaded`}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500">
-                          XLS, CSV, PDF, DOC, DOCX, PPT, PPTX
-                        </p>
-                      </div>
-                      {uploadedFiles.length > 0 && (
-                        <div className="mt-6">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-medium text-gray-700">
-                                Uploaded Files
-                              </h4>
-                              <span className="text-xs text-gray-500">
-                                ({uploadedFiles.length} files)
-                              </span>
-                            </div>
-                            {uploadedFiles.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => setUploadedFiles([])}
-                                className="text-xs text-red-600 hover:text-red-700 font-medium"
-                              >
-                                Remove All
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid gap-3">
-                            {uploadedFiles.map((file, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 group hover:border-indigo-200 hover:bg-white transition-all duration-200"
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="p-2 bg-indigo-50 rounded-lg shrink-0">
-                                    <FileText className="w-5 h-5 text-indigo-500" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-medium text-gray-700 truncate">
-                                      {file.split("/").pop()}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {getFileType(file.split("/").pop())}
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setUploadedFiles((prev) =>
-                                      prev.filter((_, i) => i !== index)
-                                    )
-                                  }
-                                  className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors duration-200 shrink-0"
-                                  aria-label={`Remove file ${index + 1}`}
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              )}
+              {validationErrors.subCategory && (
+                <div className="text-red-500 text-xs mt-1">
+                  {validationErrors.subCategory}
                 </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end pt-8">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
-                >
-                  {loading && <Loader2 className="animate-spin mr-3 h-5 w-5" />}
-                  {loading ? "Submitting..." : "Add Product"}
-                </button>
-              </div>
-            </form>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6">
+          Pricing Information
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Price (₹) *
+            </label>
+            <input
+              type="number"
+              name="price"
+              value={form.price}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min={0}
+              step="0.01"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.price && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.price}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Compare at Price *
+            </label>
+            <input
+              type="number"
+              name="compareAtPrice"
+              value={form.compareAtPrice}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min={0}
+              step="0.01"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.compareAtPrice && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.compareAtPrice}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity Available *
+            </label>
+            <input
+              type="number"
+              name="quantityAvailable"
+              value={form.quantityAvailable}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min={1}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.quantityAvailable && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.quantityAvailable}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Lot Size *
+            </label>
+            <input
+              type="number"
+              name="lotSize"
+              value={form.lotSize}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.lotSize && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.lotSize}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Length (cm) *
+            </label>
+            <input
+              type="number"
+              name="length"
+              value={form.length}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min={0}
+              step="0.01"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.length && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.length}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Breadth (cm) *
+            </label>
+            <input
+              type="number"
+              name="breadth"
+              value={form.breadth}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min={0}
+              step="0.01"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.breadth && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.breadth}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Height (cm) *
+            </label>
+            <input
+              type="number"
+              name="height"
+              value={form.height}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min={0}
+              step="0.01"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.height && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.height}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Weight (g) *
+            </label>
+            <input
+              type="number"
+              name="weight"
+              value={form.weight}
+              onChange={handleChange}
+              onWheel={(e) => e.target.blur()}
+              min={0}
+              step="0.01"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.weight && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.weight}
+              </div>
+            )}
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6">
+          Description
+        </h3>
+        <div className="space-y-6 mb-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Key Highlights *
+            </label>
+            {form.keyHighLights.map((hl, idx) => (
+              <div key={idx} className="flex items-center gap-2 mb-2">
+                <input
+                  type="text"
+                  value={hl}
+                  onChange={(e) => handleHighlightChange(idx, e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  maxLength={100}
+                />
+                {form.keyHighLights.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeHighlight(idx)}
+                    className="text-red-500"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            {validationErrors.keyHighLights && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.keyHighLights}
+              </div>
+            )}
+            {form.keyHighLights.length < 10 && (
+              <button
+                type="button"
+                onClick={addHighlight}
+                className="text-blue-600 mt-1"
+              >
+                + Add Highlight
+              </button>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Brand *
+            </label>
+            <input
+              type="text"
+              name="brand"
+              value={form.brand}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30"
+            />
+            {validationErrors.brand && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.brand}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Model *
+            </label>
+            <input
+              type="text"
+              name="model"
+              value={form.model}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30"
+            />
+            {validationErrors.model && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.model}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Description *
+            </label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              rows={3}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+            {validationErrors.description && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.description}
+              </div>
+            )}
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6">
+          Images
+        </h3>
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Featured Image *
+          </label>
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition mb-2"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={async (e) => {
+              e.preventDefault();
+              const file = Array.from(e.dataTransfer.files).find((f) =>
+                f.type.startsWith("image/")
+              );
+              if (!file) return;
+              if (file.size > 2 * 1024 * 1024) {
+                setError("Featured image must be under 2MB");
+                return;
+              }
+              setLoading(true);
+              setError(null);
+              try {
+                const data = await uploadFiles(
+                  "https://starfish-app-6q6ot.ondigitalocean.app/api/image/upload",
+                  [file]
+                );
+                if (data.imageUrls && data.imageUrls.length > 0) {
+                  setForm((prev) => {
+                    const newForm = {
+                      ...prev,
+                      featuredImage: data.imageUrls[0],
+                    };
+                    setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                    return newForm;
+                  });
+                } else {
+                  setError("Failed to upload featured image");
+                }
+              } catch (err) {
+                setError("Failed to upload featured image");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            onClick={() =>
+              document.getElementById("featured-image-input").click()
+            }
+          >
+            <div className="text-gray-500 mb-2">
+              Drag & drop a featured image here or click to select
+            </div>
+            <div className="text-xs text-gray-400">JPG/PNG only, under 2MB</div>
+            <input
+              id="featured-image-input"
+              type="file"
+              accept="image/jpeg,image/png"
+              onChange={handleFeaturedImageChange}
+              className="hidden"
+            />
+          </div>
+          {form.featuredImage && (
+            <div className="relative inline-block mt-2">
+              <img
+                src={form.featuredImage}
+                alt="Featured Preview"
+                className="w-24 h-24 object-cover rounded"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((prev) => {
+                    const newForm = { ...prev, featuredImage: "" };
+                    setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                    return newForm;
+                  })
+                }
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow"
+                title="Remove featured image"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {validationErrors.featuredImage && (
+            <div className="text-red-500 text-xs mt-1">
+              {validationErrors.featuredImage}
+            </div>
+          )}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Other Images (max 10)
+            </label>
+            <div
+              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition mb-2"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={async (e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files).filter((f) =>
+                  f.type.startsWith("image/")
+                );
+                if (form.images.length + files.length > 10) {
+                  setError("Maximum 10 images allowed");
+                  return;
+                }
+                setLoading(true);
+                setError(null);
+                try {
+                  const data = await uploadFiles(
+                    "https://starfish-app-6q6ot.ondigitalocean.app/api/image/upload",
+                    files
+                  );
+                  if (data.imageUrls && data.imageUrls.length > 0) {
+                    setForm((prev) => {
+                      const newForm = {
+                        ...prev,
+                        images: [...prev.images, ...data.imageUrls],
+                      };
+                      setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                      return newForm;
+                    });
+                  } else {
+                    setError("Failed to upload images");
+                  }
+                } catch (err) {
+                  setError("Failed to upload images");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              onClick={() =>
+                document.getElementById("other-images-input").click()
+              }
+            >
+              <div className="text-gray-500 mb-2">
+                Drag & drop images here or click to select
+              </div>
+              <div className="text-xs text-gray-400">
+                Max 10 images, JPG/PNG only, each under 2MB
+              </div>
+              <input
+                id="other-images-input"
+                type="file"
+                accept="image/jpeg,image/png"
+                multiple
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {form.images.map((img, idx) => (
+                <div key={idx} className="relative">
+                  <img
+                    src={img}
+                    alt={`Preview ${idx + 1}`}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          {validationErrors.images && (
+            <div className="text-red-500 text-xs mt-1">
+              {validationErrors.images}
+            </div>
+          )}
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6">
+          File Attachments
+        </h3>
+        <div className="mb-8">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            File Attachments (PDF, Excel, Word, PowerPoint, CSV)
+          </label>
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition mb-2"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files).filter((f) =>
+                [
+                  "application/vnd.ms-excel",
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                  "text/csv",
+                  "application/pdf",
+                  "application/msword",
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  "application/vnd.ms-powerpoint",
+                  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                ].includes(f.type)
+              );
+              setForm((prev) => {
+                const newForm = {
+                  ...prev,
+                  files: [...prev.files, ...files],
+                };
+                setHasUnsavedChanges(checkForUnsavedChanges(newForm));
+                return newForm;
+              });
+            }}
+            onClick={() =>
+              document.getElementById("file-attachments-input").click()
+            }
+          >
+            <div className="text-gray-500 mb-2">
+              Drag & drop files here or click to select
+            </div>
+            <div className="text-xs text-gray-400 mb-3">
+              Supported formats: PDF, XLS/XLSX, CSV, DOC/DOCX, PPT/PPTX
+            </div>
+            <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+              <div className="flex items-center gap-1">
+                <FileText className="w-4 h-4 text-red-500" />
+                <span>PDF</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                <span>Excel</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Word</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <FileImage className="w-4 h-4 text-orange-500" />
+                <span>PowerPoint</span>
+              </div>
+            </div>
+            <input
+              id="file-attachments-input"
+              type="file"
+              accept=".xls,.xlsx,.csv,.pdf,.doc,.docx,.ppt,.pptx"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+          <ul className="mt-2 space-y-2">
+            {form.files.map((file, idx) => (
+              <li
+                key={idx}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+              >
+                <div className="flex items-center gap-3">
+                  {getFileIcon(file.name || file)}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-900">
+                      {file.name || file}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {getFileTypeLabel(file.name || file)}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFile(idx)}
+                  className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                  title="Remove file"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          {validationErrors.files && (
+            <div className="text-red-500 text-xs mt-1">
+              {validationErrors.files}
+            </div>
+          )}
+        </div>
+        <div className="flex gap-4 pt-4">
+          <button
+            type="button"
+            onClick={async () => {
+              if (hasUnsavedChanges) {
+                const result = await Swal.fire({
+                  title: "Unsaved Changes",
+                  text: "You have unsaved changes. Are you sure you want to discard them and leave?",
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonText: "Yes, discard changes",
+                  cancelButtonText: "Cancel",
+                  customClass: {
+                    popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+                    icon: "w-12 h-12",
+                    title: "text-lg font-bold text-gray-800",
+                    htmlContainer: "text-sm text-gray-600",
+                    actions: "flex justify-center gap-5",
+                    confirmButton:
+                      "bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700",
+                    cancelButton:
+                      "bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300",
+                  },
+                  buttonsStyling: false,
+                });
+
+                if (result.isConfirmed) {
+                  setHasUnsavedChanges(false);
+                  window.history.back();
+                }
+              } else {
+                window.history.back();
+              }
+            }}
+            className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg border border-gray-300 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 bg-[#0c0b45] text-white py-3 px-6 rounded-lg hover:bg-[#14136a] focus:outline-none focus:ring-2 focus:ring-[#0c0b45] focus:ring-offset-2 transition-all duration-200 font-medium shadow-sm hover:shadow-md transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {loading ? "Adding..." : "Add Product"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
-
-// Reusable Components
-const Section = ({ title, children }) => (
-  <section className="space-y-6 bg-white p-6 rounded-xl shadow-md border border-gray-200">
-    <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-    {children}
-  </section>
-);
-
-const InputField = ({
-  label,
-  type = "text",
-  value,
-  onChange,
-  error,
-  required,
-  placeholder,
-}) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-3">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      className={`w-full p-4 border ${
-        error ? "border-red-500" : "border-gray-200"
-      } rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200`}
-      placeholder={placeholder}
-      aria-label={label}
-      aria-invalid={!!error}
-    />
-    {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-  </div>
-);
-
-export const DropdownInput = ({ label, dropdown, singleSelect, error }) => (
-  <div ref={dropdown.dropdownRef}>
-    <label className="block text-sm font-medium text-gray-700 mb-3">
-      {label} <span className="text-red-500">*</span>
-    </label>
-    <div className="relative">
-      <div className="flex flex-wrap gap-2 mb-3">
-        {dropdown.selectedItems.map((item) => (
-          <div
-            key={item._id}
-            className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full flex items-center gap-2 text-sm shadow-sm hover:bg-indigo-200 transition-colors duration-200"
-          >
-            {item.name}
-            <button
-              type="button"
-              className="text-indigo-600 hover:text-indigo-900 focus:outline-none"
-              onClick={() => dropdown.handleRemoveItem(item)}
-              aria-label={`Remove ${item.name}`}
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
-      <input
-        type="text"
-        className={`w-full p-4 border ${
-          error ? "border-red-500" : "border-gray-200"
-        } rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200`}
-        value={dropdown.input}
-        onChange={dropdown.handleInputChange}
-        onFocus={dropdown.handleFocus}
-        ref={dropdown.inputRef}
-        disabled={singleSelect && dropdown.selectedItems.length > 0}
-        placeholder={`Select ${label.toLowerCase()}...`}
-        aria-label={label}
-        aria-expanded={dropdown.showDropdown}
-        aria-invalid={!!error}
-      />
-      {dropdown.showDropdown && dropdown.filteredItems.length > 0 && (
-        <ul className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-          {dropdown.filteredItems.map((item) => (
-            <li
-              key={item._id}
-              className={`px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-all duration-150 ${
-                dropdown.matchedItem?._id === item._id ? "bg-indigo-50" : ""
-              }`}
-              onClick={() => dropdown.handleSelectItem(item)}
-              role="option"
-              aria-selected={dropdown.matchedItem?._id === item._id}
-            >
-              {item.name}
-            </li>
-          ))}
-        </ul>
-      )}
-      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-    </div>
-  </div>
-);
 
 export default AddProduct;

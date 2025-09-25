@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import Swal from "sweetalert2";
 import {
   Search,
   Plus,
@@ -48,7 +49,7 @@ const SkeletonRow = () => (
   </tr>
 );
 
-const ProductRow = memo(({ product, onDelete }) => {
+const ProductRow = memo(({ product, onDelete, onEdit }) => {
   const navigate = useNavigate();
 
   const handleRowClick = () => {
@@ -85,7 +86,7 @@ const ProductRow = memo(({ product, onDelete }) => {
         {product.seller}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-        ${product.price.toFixed(2)}
+        ₹{product.price.toFixed(2)}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
         {product.stock}
@@ -109,6 +110,7 @@ const ProductRow = memo(({ product, onDelete }) => {
       >
         <div className="flex justify-end items-center space-x-2">
           <button
+            onClick={() => onEdit(product.id)}
             className="p-1 rounded-md text-gray-500 hover:text-[#0c0b45] hover:bg-gray-100 transition-colors cursor-pointer"
             aria-label={`Edit ${product.name}`}
           >
@@ -139,6 +141,8 @@ styleSheet.textContent = styles;
 document.head.appendChild(styleSheet);
 
 const AllProducts = () => {
+  const navigate = useNavigate();
+  const { api } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -152,6 +156,7 @@ const AllProducts = () => {
   const [limit] = useState(6);
   const [sortBy, setSortBy] = useState("createdAt");
   const [order, setOrder] = useState("desc");
+  const [availableCategories, setAvailableCategories] = useState([]);
 
   // Debounce search term
   useEffect(() => {
@@ -165,11 +170,16 @@ const AllProducts = () => {
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
+      // Find category ID by name
+      const selectedCategory = availableCategories.find(
+        (cat) => cat.name === categoryFilter
+      );
+
       const params = {
         page: currentPage,
         limit,
         ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
-        ...(categoryFilter && { category: categoryFilter }),
+        ...(selectedCategory && { category: selectedCategory._id }),
         ...(statusFilter && { status: statusFilter }),
         ...(sortBy && { sortBy }),
         ...(order && { order }),
@@ -177,12 +187,9 @@ const AllProducts = () => {
 
       console.log(params);
 
-      const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/products",
-        {
-          params,
-        }
-      );
+      const response = await api.get("/api/products", {
+        params,
+      });
 
       const mappedProducts = response.data.products.map((product) => ({
         id: product._id,
@@ -219,15 +226,72 @@ const AllProducts = () => {
     sortBy,
     order,
     limit,
+    api,
+    availableCategories,
   ]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const handleDeleteProduct = (id) => {
-    setProducts(products.filter((product) => product.id !== id));
-    fetchProducts();
+  const handleDeleteProduct = async (id) => {
+    try {
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to delete this product?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+        customClass: {
+          popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+          icon: "w-12 h-12",
+          title: "text-lg font-bold text-gray-800",
+          htmlContainer: "text-sm text-gray-600",
+          actions: "flex justify-center gap-5",
+          confirmButton: "bg-[#0c0b45] text-white py-2 px-4 rounded-lg",
+          cancelButton:
+            "bg-gray-200 text-[#0c0b45] py-2 px-4 rounded-lg hover:bg-gray-300",
+        },
+        buttonsStyling: false,
+      });
+
+      if (result.isConfirmed) {
+        await api.delete(`/api/products/delete/${id}`);
+        setProducts((prevProducts) =>
+          prevProducts.filter((product) => product.id !== id)
+        );
+
+        Swal.fire({
+          title: "Deleted!",
+          text: "The product has been deleted successfully.",
+          icon: "success",
+          timer: 2000,
+          customClass: {
+            popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+            title: "text-lg font-bold text-gray-800",
+            htmlContainer: "text-sm text-gray-600",
+          },
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to delete the product. Please try again.",
+        icon: "error",
+        customClass: {
+          popup: "w-72 p-4 bg-gray-100 rounded-lg shadow-lg",
+          title: "text-lg font-bold text-gray-800",
+          htmlContainer: "text-sm text-gray-600",
+        },
+      });
+    }
+  };
+
+  const handleEditProduct = (id) => {
+    navigate(`/products/edit/${id}`);
   };
 
   const handleSort = (field) => {
@@ -240,9 +304,22 @@ const AllProducts = () => {
     setCurrentPage(1);
   };
 
+  // Fetch available categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get("/api/categories/all");
+        setAvailableCategories(response.data.data || []);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, [api]);
+
   const categories = useMemo(
-    () => ["", ...new Set(products.map((p) => p.category))],
-    [products]
+    () => ["", ...availableCategories.map((cat) => cat.name)],
+    [availableCategories]
   );
   const statuses = useMemo(
     () => ["", "Active", "Low Stock", "Out of Stock"],
@@ -274,6 +351,7 @@ const AllProducts = () => {
               Export
             </button>
             <button
+              onClick={() => navigate("/products/add")}
               className="flex items-center px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors cursor-pointer"
               aria-label="Add new product"
             >
@@ -400,6 +478,7 @@ const AllProducts = () => {
                         key={product.id}
                         product={product}
                         onDelete={handleDeleteProduct}
+                        onEdit={handleEditProduct}
                       />
                     ))}
               </tbody>
@@ -458,6 +537,7 @@ const AllProducts = () => {
                 for.
               </p>
               <button
+                onClick={() => navigate("/products/add")}
                 className="mt-4 px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#14136a] transition-colors cursor-pointer"
                 aria-label="Add new product"
               >

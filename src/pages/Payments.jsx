@@ -31,7 +31,7 @@ const Payments = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "https://cotchel-server-tvye7.ondigitalocean.app/api/admin/transactions",
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/transactions",
         {
           params: {
             page: currentPage,

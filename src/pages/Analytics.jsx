@@ -500,14 +500,11 @@ const Analytics = () => {
           </div> */}
 
           {/* Top Sellers */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-6">
+          {/* <div className="bg-white rounded-lg shadow p-6">
+            <div className="mb-6">
               <h3 className="text-lg font-medium text-gray-900">
                 Top Performing Sellers
               </h3>
-              <button className="text-sm text-[#0c0b45] hover:underline">
-                View All
-              </button>
             </div>
             <div className="space-y-4">
               {topSellers.map((seller) => (
@@ -527,7 +524,7 @@ const Analytics = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Data Export */}

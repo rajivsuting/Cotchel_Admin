@@ -25,6 +25,9 @@ import Notifications from "../pages/Notifications";
 import Payments from "../pages/Payments";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Signin from "../pages/Signin";
+import RequestReset from "../pages/RequestReset";
+import ResetPassword from "../pages/ResetPassword";
+import TopSellingProducts from "../pages/TopSellingProducts";
 import OrderDetails from "../pages/OrderDetails";
 import Banners from "../pages/Banners";
 import AddBanner from "../pages/AddBanner";
@@ -38,6 +41,8 @@ const AllRoutes = () => {
   return (
     <Routes>
       <Route path="/signin" element={<Signin />} />
+      <Route path="/request-reset" element={<RequestReset />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         path="/"
         element={
@@ -48,6 +53,7 @@ const AllRoutes = () => {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/all-products" element={<AllProducts />} />
+        <Route path="/top-selling-products" element={<TopSellingProducts />} />
         <Route path="/add-product" element={<AddProduct />} />
         <Route path="/products/edit/:id" element={<EditProduct />} />
         <Route path="/products/:id" element={<ProductDetails />} />

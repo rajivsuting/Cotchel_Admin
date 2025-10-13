@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   Mail,
@@ -307,6 +307,15 @@ const Signin = () => {
               )}
             </button>
           </form>
+
+          <div className="mt-6 text-center">
+            <Link
+              to="/request-reset"
+              className="text-sm text-[#0c0b45] hover:text-[#14136a] hover:underline transition-colors"
+            >
+              Forgot your password?
+            </Link>
+          </div>
 
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">

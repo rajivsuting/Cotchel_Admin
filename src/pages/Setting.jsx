@@ -8,6 +8,10 @@ import {
   X,
   UserPlus,
   Trash2,
+  User,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -32,9 +36,37 @@ const Setting = () => {
     gender: "Male",
   });
 
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
+
+  const [passwordErrors, setPasswordErrors] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [profileData, setProfileData] = useState({
+    fullName: "",
+    phoneNumber: "",
+    gender: "Male",
+    email: "",
+  });
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+
   useEffect(() => {
     fetchPlatformSettings();
     fetchAdmins();
+    fetchProfileData();
   }, []);
 
   const fetchAdmins = async () => {
@@ -62,6 +94,33 @@ const Setting = () => {
         }
       );
       setAdmins([]);
+    }
+  };
+
+  const fetchProfileData = async () => {
+    try {
+      const response = await axios.get(
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (response.data.data) {
+        setProfileData({
+          fullName: response.data.data.fullName || "",
+          phoneNumber: response.data.data.phoneNumber || "",
+          gender: response.data.data.gender || "Male",
+          email: response.data.data.email || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile data", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -114,6 +173,162 @@ const Setting = () => {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handlePasswordChange = (field, value) => {
+    setPasswordForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    // Clear error when user starts typing
+    if (passwordErrors[field]) {
+      setPasswordErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
+
+    // Real-time validation for new password
+    if (field === "newPassword") {
+      validateNewPassword(value);
+    }
+
+    // Real-time validation for confirm password
+    if (field === "confirmPassword") {
+      validateConfirmPassword(value, passwordForm.newPassword);
+    }
+  };
+
+  const handleProfileChange = (field, value) => {
+    setProfileData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await axios.put(
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/profile",
+        {
+          fullName: profileData.fullName,
+          phoneNumber: profileData.phoneNumber,
+          gender: profileData.gender,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      toast.success("Profile updated successfully", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      setIsEditingProfile(false);
+      fetchProfileData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update profile", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const handleCancelProfileEdit = () => {
+    fetchProfileData();
+    setIsEditingProfile(false);
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setPasswordVisibility((prev) => ({
+      ...prev,
+      [field]: !prev[field],
+    }));
+  };
+
+  const validateNewPassword = (password) => {
+    const errors = [];
+
+    if (password.length < 8) {
+      errors.push("Password must be at least 8 characters long");
+    }
+
+    if (!/(?=.*[a-z])/.test(password)) {
+      errors.push("Password must contain at least one lowercase letter");
+    }
+
+    if (!/(?=.*[A-Z])/.test(password)) {
+      errors.push("Password must contain at least one uppercase letter");
+    }
+
+    if (!/(?=.*\d)/.test(password)) {
+      errors.push("Password must contain at least one number");
+    }
+
+    if (!/(?=.*[@$!%*?&])/.test(password)) {
+      errors.push(
+        "Password must contain at least one special character (@$!%*?&)"
+      );
+    }
+
+    setPasswordErrors((prev) => ({
+      ...prev,
+      newPassword: errors.length > 0 ? errors.join(", ") : "",
+    }));
+
+    return errors.length === 0;
+  };
+
+  const validateConfirmPassword = (confirmPassword, newPassword) => {
+    if (confirmPassword && confirmPassword !== newPassword) {
+      setPasswordErrors((prev) => ({
+        ...prev,
+        confirmPassword: "Passwords do not match",
+      }));
+      return false;
+    } else {
+      setPasswordErrors((prev) => ({
+        ...prev,
+        confirmPassword: "",
+      }));
+      return true;
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!passwordForm.currentPassword.trim()) {
+      errors.currentPassword = "Current password is required";
+    }
+
+    if (!passwordForm.newPassword.trim()) {
+      errors.newPassword = "New password is required";
+    } else if (!validateNewPassword(passwordForm.newPassword)) {
+      // Error already set by validateNewPassword
+    }
+
+    if (!passwordForm.confirmPassword.trim()) {
+      errors.confirmPassword = "Please confirm your new password";
+    } else if (
+      !validateConfirmPassword(
+        passwordForm.confirmPassword,
+        passwordForm.newPassword
+      )
+    ) {
+      // Error already set by validateConfirmPassword
+    }
+
+    setPasswordErrors((prev) => ({ ...prev, ...errors }));
+    return (
+      Object.keys(errors).length === 0 &&
+      !passwordErrors.newPassword &&
+      !passwordErrors.confirmPassword
+    );
   };
 
   const handleAddAdmin = async () => {
@@ -230,9 +445,73 @@ const Setting = () => {
     setIsEditMode(false);
   };
 
+  const handleChangePassword = async () => {
+    if (!validateForm()) {
+      toast.error("Please fix the validation errors before submitting", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      await axios.put(
+        "https://starfish-app-6q6ot.ondigitalocean.app/api/admin/change-password",
+        {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      toast.success("Password updated successfully", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      setPasswordErrors({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      setPasswordVisibility({
+        currentPassword: false,
+        newPassword: false,
+        confirmPassword: false,
+      });
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to update password";
+
+      if (errorMessage.includes("Current password is incorrect")) {
+        setPasswordErrors((prev) => ({
+          ...prev,
+          currentPassword: "Current password is incorrect",
+        }));
+      }
+
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    }
+  };
+
   const tabs = [
     { icon: Building2, label: "General" },
     { icon: Users, label: "Admins" },
+    { icon: User, label: "Account" },
   ];
 
   if (loading) {
@@ -549,6 +828,333 @@ const Setting = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Account Settings */}
+            {activeTab === 2 && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Account Settings
+                </h2>
+
+                {/* Profile Information */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <User className="w-5 h-5 text-[#0c0b45]" />
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Profile Information
+                      </h3>
+                    </div>
+                    {!isEditingProfile ? (
+                      <button
+                        onClick={() => setIsEditingProfile(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-[#0c0b45] border border-[#0c0b45] rounded-lg hover:bg-[#0c0b45] hover:text-white transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        <span>Edit Profile</span>
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleCancelProfileEdit}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                          <span>Cancel</span>
+                        </button>
+                        <button
+                          onClick={handleSaveProfile}
+                          className="flex items-center gap-2 px-4 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#0c0b45]/90 transition-colors"
+                        >
+                          <Save className="w-4 h-4" />
+                          <span>Save Changes</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name
+                      </label>
+                      {isEditingProfile ? (
+                        <input
+                          type="text"
+                          value={profileData.fullName}
+                          onChange={(e) =>
+                            handleProfileChange("fullName", e.target.value)
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0c0b45] focus:border-[#0c0b45]"
+                          placeholder="Enter your full name"
+                        />
+                      ) : (
+                        <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+                          {profileData.fullName || "Not set"}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                      </label>
+                      <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+                        {profileData.email || "Not set"}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Email cannot be changed
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </label>
+                      {isEditingProfile ? (
+                        <input
+                          type="tel"
+                          value={profileData.phoneNumber}
+                          onChange={(e) =>
+                            handleProfileChange("phoneNumber", e.target.value)
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0c0b45] focus:border-[#0c0b45]"
+                          placeholder="Enter your phone number"
+                        />
+                      ) : (
+                        <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+                          {profileData.phoneNumber || "Not set"}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Gender
+                      </label>
+                      {isEditingProfile ? (
+                        <select
+                          value={profileData.gender}
+                          onChange={(e) =>
+                            handleProfileChange("gender", e.target.value)
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0c0b45] focus:border-[#0c0b45]"
+                        >
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      ) : (
+                        <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+                          {profileData.gender || "Not set"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Change Password */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Lock className="w-5 h-5 text-[#0c0b45]" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Change Password
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Current Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={
+                            passwordVisibility.currentPassword
+                              ? "text"
+                              : "password"
+                          }
+                          value={passwordForm.currentPassword}
+                          onChange={(e) =>
+                            handlePasswordChange(
+                              "currentPassword",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-[#0c0b45] focus:border-[#0c0b45] ${
+                            passwordErrors.currentPassword
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                              : "border-gray-300"
+                          }`}
+                          placeholder="Enter current password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            togglePasswordVisibility("currentPassword")
+                          }
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {passwordVisibility.currentPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                      {passwordErrors.currentPassword && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {passwordErrors.currentPassword}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={
+                            passwordVisibility.newPassword ? "text" : "password"
+                          }
+                          value={passwordForm.newPassword}
+                          onChange={(e) =>
+                            handlePasswordChange("newPassword", e.target.value)
+                          }
+                          className={`w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-[#0c0b45] focus:border-[#0c0b45] ${
+                            passwordErrors.newPassword
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                              : "border-gray-300"
+                          }`}
+                          placeholder="Enter new password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            togglePasswordVisibility("newPassword")
+                          }
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {passwordVisibility.newPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                      {passwordErrors.newPassword && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {passwordErrors.newPassword}
+                        </p>
+                      )}
+                      <div className="mt-2 text-xs text-gray-600">
+                        <p>Password must contain:</p>
+                        <ul className="list-disc list-inside space-y-1 mt-1">
+                          <li
+                            className={
+                              passwordForm.newPassword.length >= 8
+                                ? "text-green-600"
+                                : "text-gray-500"
+                            }
+                          >
+                            At least 8 characters
+                          </li>
+                          <li
+                            className={
+                              /(?=.*[a-z])/.test(passwordForm.newPassword)
+                                ? "text-green-600"
+                                : "text-gray-500"
+                            }
+                          >
+                            One lowercase letter
+                          </li>
+                          <li
+                            className={
+                              /(?=.*[A-Z])/.test(passwordForm.newPassword)
+                                ? "text-green-600"
+                                : "text-gray-500"
+                            }
+                          >
+                            One uppercase letter
+                          </li>
+                          <li
+                            className={
+                              /(?=.*\d)/.test(passwordForm.newPassword)
+                                ? "text-green-600"
+                                : "text-gray-500"
+                            }
+                          >
+                            One number
+                          </li>
+                          <li
+                            className={
+                              /(?=.*[@$!%*?&])/.test(passwordForm.newPassword)
+                                ? "text-green-600"
+                                : "text-gray-500"
+                            }
+                          >
+                            One special character (@$!%*?&)
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={
+                            passwordVisibility.confirmPassword
+                              ? "text"
+                              : "password"
+                          }
+                          value={passwordForm.confirmPassword}
+                          onChange={(e) =>
+                            handlePasswordChange(
+                              "confirmPassword",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full px-4 py-2 pr-12 border rounded-lg focus:ring-2 focus:ring-[#0c0b45] focus:border-[#0c0b45] ${
+                            passwordErrors.confirmPassword
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                              : "border-gray-300"
+                          }`}
+                          placeholder="Confirm new password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            togglePasswordVisibility("confirmPassword")
+                          }
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {passwordVisibility.confirmPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                      {passwordErrors.confirmPassword && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {passwordErrors.confirmPassword}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex justify-end mt-6">
+                      <button
+                        onClick={handleChangePassword}
+                        className="flex items-center gap-2 px-6 py-2 bg-[#0c0b45] text-white rounded-lg hover:bg-[#0c0b45]/90 transition-colors"
+                      >
+                        <Lock className="w-4 h-4" />
+                        <span>Update Password</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

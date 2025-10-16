@@ -206,13 +206,6 @@ const Dashboard = () => {
               <p className="text-sm text-gray-500">
                 Total Orders: {totalOrders}
               </p>
-              <button
-                onClick={() => navigate("/all-orders")}
-                style={{ color: themeColor }}
-                className="mt-3 hover:underline text-sm font-medium"
-              >
-                View Details →
-              </button>
             </div>
           </div>
 
@@ -289,7 +282,7 @@ const Dashboard = () => {
               )}
             </div>
             <button
-              onClick={() => navigate("/categories")}
+              onClick={() => navigate("/popular-categories")}
               style={{ color: themeColor }}
               className="mt-4 text-sm font-medium hover:underline"
             >

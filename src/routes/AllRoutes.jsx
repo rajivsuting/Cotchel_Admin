@@ -37,6 +37,7 @@ import AddPromotionalBanner from "../pages/AddPromotionalBanner";
 import EditPromotionalBanner from "../pages/EditPromotionalBanner";
 import TransactionDetails from "../pages/TransactionDetails";
 import SellerTransactions from "../pages/SellerTransactions";
+import PopularCategories from "../pages/PopularCategories";
 const AllRoutes = () => {
   return (
     <Routes>
@@ -62,6 +63,7 @@ const AllRoutes = () => {
         <Route path="/help-center/:id" element={<InquiryDetails />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/popular-categories" element={<PopularCategories />} />
         <Route path="/all-orders" element={<AllOrders />} />
         <Route path="/add-category" element={<AddCategory />} />
         <Route path="/subcategories" element={<Subcategories />} />

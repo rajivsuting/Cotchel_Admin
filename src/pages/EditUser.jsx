@@ -289,19 +289,14 @@ const EditUser = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    User Role *
+                    User Role
                   </label>
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all"
-                    required
-                  >
-                    <option value="Buyer">Buyer</option>
-                    <option value="Seller">Seller</option>
-                    <option value="Admin">Admin</option>
-                  </select>
+                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                    {formData.role}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Role cannot be changed after user creation
+                  </p>
                 </div>
 
                 <div className="flex items-center">

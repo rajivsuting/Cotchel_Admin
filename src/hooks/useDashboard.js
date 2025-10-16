@@ -118,19 +118,24 @@ const useDashboard = () => {
         ],
         orderStatus: [
           {
-            status: "Pending",
-            count: response.data.orderStatus?.Pending || 0,
-            color: "bg-yellow-500",
+            status: "Payment Pending",
+            count: response.data.orderStatus?.["Payment Pending"] || 0,
+            color: "bg-amber-500",
+          },
+          {
+            status: "Confirmed",
+            count: response.data.orderStatus?.Confirmed || 0,
+            color: "bg-blue-500",
           },
           {
             status: "Processing",
             count: response.data.orderStatus?.Processing || 0,
-            color: "bg-blue-500",
+            color: "bg-indigo-500",
           },
           {
             status: "Shipped",
             count: response.data.orderStatus?.Shipped || 0,
-            color: "bg-indigo-500",
+            color: "bg-purple-500",
           },
           {
             status: "Delivered",
@@ -140,7 +145,7 @@ const useDashboard = () => {
           {
             status: "Completed",
             count: response.data.orderStatus?.Completed || 0,
-            color: "bg-green-500",
+            color: "bg-green-600",
           },
           {
             status: "Cancelled",

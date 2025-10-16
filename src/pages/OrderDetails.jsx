@@ -16,6 +16,7 @@ import {
   User,
   Calendar,
   CreditCard,
+  Download,
 } from "lucide-react";
 
 const statusColors = {
@@ -56,6 +57,7 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -81,6 +83,54 @@ const OrderDetails = () => {
 
     fetchOrderDetails();
   }, [orderId]);
+
+  const handleDownloadInvoice = async () => {
+    try {
+      setDownloadingInvoice(true);
+      const response = await axios.get(
+        `https://starfish-app-6q6ot.ondigitalocean.app/api/invoices/${orderId}/download`,
+        {
+          responseType: "blob",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Cotchel-Invoice-${orderId.slice(-8).toUpperCase()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      console.log("Invoice downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      setError(error.response?.data?.message || "Failed to download invoice");
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
+
+  // Helper function to check if invoice can be downloaded
+  const canDownloadInvoice = (status, paymentStatus) => {
+    const eligibleStatuses = [
+      "Confirmed",
+      "Processing",
+      "Packed",
+      "Shipped",
+      "In Transit",
+      "Out for Delivery",
+      "Delivered",
+      "Completed",
+    ];
+
+    return eligibleStatuses.includes(status) && paymentStatus === "Paid";
+  };
 
   if (loading) {
     return (
@@ -148,6 +198,18 @@ const OrderDetails = () => {
                     <CreditCard className="w-4 h-4 mr-1" />
                     {order.paymentStatus}
                   </span>
+                  {canDownloadInvoice(order.status, order.paymentStatus) && (
+                    <button
+                      onClick={handleDownloadInvoice}
+                      disabled={downloadingInvoice}
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download className="w-4 h-4" />
+                      {downloadingInvoice
+                        ? "Downloading..."
+                        : "Download Invoice"}
+                    </button>
+                  )}
                 </div>
               </div>
 

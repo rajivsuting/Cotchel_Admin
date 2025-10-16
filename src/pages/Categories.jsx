@@ -97,7 +97,6 @@ const Categories = () => {
   const [order, setOrder] = useState("asc");
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryIcon, setNewCategoryIcon] = useState(null);
   const [addingCategory, setAddingCategory] = useState(false);
   const [addError, setAddError] = useState(null);
   const [addSuccess, setAddSuccess] = useState(false);
@@ -157,23 +156,17 @@ const Categories = () => {
     setAddError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("name", newCategoryName);
-      if (newCategoryIcon) {
-        formData.append("icon", newCategoryIcon);
-      }
-
+      // Send as JSON instead of FormData since backend doesn't support file upload yet
       const response = await axios.post(
         "https://starfish-app-6q6ot.ondigitalocean.app/api/categories/create",
-        formData,
+        { name: newCategoryName.trim() },
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "application/json" },
         }
       );
 
       setCategories((prev) => [...prev, response.data.data]);
       setNewCategoryName("");
-      setNewCategoryIcon(null);
       setShowAddForm(false);
       setAddSuccess(true);
       setTimeout(() => setAddSuccess(false), 3000);
@@ -267,13 +260,6 @@ const Categories = () => {
       setOrder("desc");
     }
     setCurrentPage(1);
-  };
-
-  const handleIconChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewCategoryIcon(file);
-    }
   };
 
   const handleEditCategory = (id) => {
@@ -419,36 +405,11 @@ const Categories = () => {
                   customers.
                 </p>
               </div>
-              <div>
-                <label
-                  htmlFor="categoryIcon"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Category Icon
-                </label>
-                <input
-                  id="categoryIcon"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleIconChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#0c0b45] file:text-white hover:file:bg-[#14136a]"
-                  aria-label="Upload category icon"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Recommended dimensions: 40x40 pixels (PNG, JPG, or SVG).
-                </p>
-                {newCategoryIcon && (
-                  <p className="mt-1 text-xs text-gray-600">
-                    Selected: {newCategoryIcon.name}
-                  </p>
-                )}
-              </div>
               <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => {
                     setNewCategoryName("");
-                    setNewCategoryIcon(null);
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors cursor-pointer"
                   aria-label="Clear form"

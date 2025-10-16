@@ -157,6 +157,48 @@ const AllOrders = () => {
     }
   };
 
+  const handleDownloadInvoice = async (orderId, event) => {
+    event.stopPropagation(); // Prevent row click navigation
+
+    try {
+      const response = await api.get(`/api/invoices/${orderId}/download`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Cotchel-Invoice-${orderId.slice(-8).toUpperCase()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      // You can add a toast notification here if you have a toast system
+      console.log("Invoice downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+      setError(error.response?.data?.message || "Failed to download invoice");
+    }
+  };
+
+  // Helper function to check if invoice can be downloaded
+  const canDownloadInvoice = (status, paymentStatus) => {
+    const eligibleStatuses = [
+      "Confirmed",
+      "Processing",
+      "Packed",
+      "Shipped",
+      "In Transit",
+      "Out for Delivery",
+      "Delivered",
+      "Completed",
+    ];
+
+    return eligibleStatuses.includes(status) && paymentStatus === "Paid";
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
@@ -217,6 +259,9 @@ const AllOrders = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -308,6 +353,34 @@ const AllOrders = () => {
                         {order.totalPrice.toFixed(2)}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {canDownloadInvoice(
+                          order.status,
+                          order.paymentStatus
+                        ) && (
+                          <button
+                            onClick={(e) =>
+                              handleDownloadInvoice(order.orderId, e)
+                            }
+                            className="inline-flex items-center gap-1 px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                            title="Download Invoice"
+                          >
+                            <Download className="w-3 h-3" />
+                            Invoice
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOrderClick(order.orderId);
+                          }}
+                          className="inline-flex items-center px-3 py-1.5 border border-[#0c0b45] text-xs font-medium rounded-md text-[#0c0b45] hover:bg-[#0c0b45] hover:text-white transition-colors"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -355,21 +428,32 @@ const AllOrders = () => {
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
                     <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
                       className={`w-8 h-8 rounded-md transition-colors ${
-                        currentPage === page
+                        currentPage === pageNum
                           ? "bg-[#0c0b45] text-white"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                     >
-                      {page}
+                      {pageNum}
                     </button>
-                  )
-                )}
+                  );
+                })}
                 <button
                   onClick={() =>
                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))

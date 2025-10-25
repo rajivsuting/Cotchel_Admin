@@ -29,6 +29,8 @@ const initialState = {
   breadth: "",
   height: "",
   weight: "",
+  sku: "",
+  isActive: true,
   files: [],
 };
 
@@ -124,6 +126,8 @@ const EditProduct = () => {
           category: prod.category?._id || prod.category,
           subCategory: prod.subCategory?._id || prod.subCategory,
           files: prod.fileAttachments || [],
+          sku: prod.sku || "",
+          isActive: prod.isActive !== undefined ? prod.isActive : true,
         });
       } catch (err) {
         setError("Failed to fetch product or categories");
@@ -287,6 +291,7 @@ const EditProduct = () => {
     if (!form.title.trim()) errors.title = "Title is required";
     if (!form.brand.trim()) errors.brand = "Brand is required";
     if (!form.model.trim()) errors.model = "Model is required";
+    if (!form.sku.trim()) errors.sku = "SKU is required";
     if (!form.category) errors.category = "Category is required";
     if (!form.subCategory) errors.subCategory = "Subcategory is required";
     if (!form.price || isNaN(form.price) || Number(form.price) < 0)
@@ -659,7 +664,7 @@ const EditProduct = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Compare at Price *
+              Compare at Price (Optional)
             </label>
             <input
               type="number"
@@ -874,6 +879,24 @@ const EditProduct = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              SKU (Stock Keeping Unit) *
+            </label>
+            <input
+              type="text"
+              name="sku"
+              value={form.sku}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0c0b45]/30"
+              placeholder="Enter unique SKU"
+            />
+            {validationErrors.sku && (
+              <div className="text-red-500 text-xs mt-1">
+                {validationErrors.sku}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Description *
             </label>
             <textarea
@@ -889,6 +912,33 @@ const EditProduct = () => {
               </div>
             )}
           </div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6">
+          Product Status
+        </h3>
+        <div className="mb-8">
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              id="isActive"
+              name="isActive"
+              checked={form.isActive}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, isActive: e.target.checked }))
+              }
+              className="w-4 h-4 text-[#0c0b45] bg-gray-100 border-gray-300 rounded focus:ring-[#0c0b45] focus:ring-2"
+            />
+            <label
+              htmlFor="isActive"
+              className="text-sm font-medium text-gray-700"
+            >
+              Product is Active
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Uncheck to deactivate this product. Deactivated products won't be
+            visible to customers.
+          </p>
         </div>
         <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6">
           Images

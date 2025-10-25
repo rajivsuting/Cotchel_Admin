@@ -108,7 +108,7 @@ const UserDetails = () => {
   };
 
   const handleToggleActive = async () => {
-    const action = user.isActive ? "deactivate" : "activate";
+    const action = user.active ? "deactivate" : "activate";
     const result = await Swal.fire({
       title: `Are you sure?`,
       text: `Do you want to ${action} this user?`,
@@ -120,11 +120,15 @@ const UserDetails = () => {
 
     if (result.isConfirmed) {
       try {
+        console.log(`Attempting to ${action} user ${id}`);
         const response = await api.put(`/api/auth/update/${id}`, {
-          isActive: !user.isActive,
+          active: !user.active,
         });
+
+        console.log("Update response:", response);
+
         if (response.status === 200) {
-          setUser({ ...user, isActive: !user.isActive });
+          setUser({ ...user, active: !user.active });
           setError(null);
           Swal.fire({
             title: "Success!",
@@ -137,9 +141,14 @@ const UserDetails = () => {
         }
       } catch (err) {
         console.error("Toggle Active Error:", err);
+        const errorMessage =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          `Failed to ${action} user.`;
+
         Swal.fire({
           title: "Error!",
-          text: err.response?.data?.message || `Failed to ${action} user.`,
+          text: errorMessage,
           icon: "error",
         });
       }
@@ -220,9 +229,15 @@ const UserDetails = () => {
                     <Briefcase size={16} className="mr-2" />
                     {user.sellerDetails ? "Seller" : "Non-Seller"}
                   </span>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#0c0b45] text-white">
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      user.active
+                        ? "bg-green-100 text-green-800 border border-green-200"
+                        : "bg-orange-100 text-orange-800 border border-orange-200"
+                    }`}
+                  >
                     <Power size={16} className="mr-2" />
-                    {user.isActive ? "Active" : "Inactive"}
+                    {user.active ? "Active" : "Inactive"}
                   </span>
                 </div>
               </div>
@@ -231,13 +246,13 @@ const UserDetails = () => {
               <button
                 onClick={handleToggleActive}
                 className={`flex items-center px-4 py-2 rounded-lg text-white transition-colors ${
-                  user.isActive
+                  user.active
                     ? "bg-yellow-600 hover:bg-yellow-700"
                     : "bg-green-600 hover:bg-green-700"
                 }`}
               >
                 <Power size={16} className="mr-2" />
-                {user.isActive ? "Deactivate" : "Activate"}
+                {user.active ? "Deactivate" : "Activate"}
               </button>
               <button
                 onClick={handleDelete}
@@ -288,8 +303,8 @@ const UserDetails = () => {
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       user.isEmailVerified
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
+                        ? "bg-green-100 text-green-800 border border-green-200"
+                        : "bg-orange-100 text-orange-800 border border-orange-200"
                     }`}
                   >
                     {user.isEmailVerified ? "Verified" : "Unverified"}

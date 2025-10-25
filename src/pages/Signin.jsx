@@ -83,20 +83,36 @@ const Signin = () => {
       if (result.success) {
         toast.success("Login successful!");
       } else {
-        setLoginAttempts((prev) => {
-          const newAttempts = prev + 1;
-          if (newAttempts >= 3) {
-            setIsLocked(true);
-            setLockTime(300);
-            toast.error(
-              "Too many failed attempts. Account locked for 5 minutes."
-            );
-          }
-          return newAttempts;
-        });
-        toast.error(
-          result.error || "Login failed. Please check your credentials."
-        );
+        // Handle specific error types
+        if (result.type === "admin_account_deactivated") {
+          toast.error(result.error, {
+            duration: 10000,
+            style: {
+              background: "#fef3c7",
+              color: "#d97706",
+              border: "1px solid #fde68a",
+              borderRadius: "8px",
+              padding: "16px",
+              fontSize: "14px",
+              fontWeight: "500",
+            },
+          });
+        } else {
+          setLoginAttempts((prev) => {
+            const newAttempts = prev + 1;
+            if (newAttempts >= 3) {
+              setIsLocked(true);
+              setLockTime(300);
+              toast.error(
+                "Too many failed attempts. Account locked for 5 minutes."
+              );
+            }
+            return newAttempts;
+          });
+          toast.error(
+            result.error || "Login failed. Please check your credentials."
+          );
+        }
       }
     } catch (error) {
       console.error("Login error:", error);

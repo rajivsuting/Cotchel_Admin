@@ -28,12 +28,29 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
-  // Add response interceptor to handle token refresh
+  // Add response interceptor to handle token refresh and account status
   useEffect(() => {
     const interceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+
+        // Handle account deactivation/deletion errors
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          const errorData = error.response.data;
+          if (
+            errorData.code === "ADMIN_ACCOUNT_DEACTIVATED" ||
+            errorData.code === "ADMIN_ACCOUNT_DELETED"
+          ) {
+            // Clear admin session and redirect to login
+            setAdmin(null);
+            toast.error(
+              errorData.message || "Your admin account has been deactivated."
+            );
+            window.location.href = "/signin";
+            return Promise.reject(error);
+          }
+        }
 
         // If error is 401 and we haven't tried to refresh token yet
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -41,7 +58,7 @@ export const AuthProvider = ({ children }) => {
 
           try {
             // Try to refresh the token
-            const response = await api.post("/api/auth/refresh-token");
+            const response = await api.post("/api/auth/admin/refresh-token");
             if (response.data.success) {
               // Retry the original request
               return api(originalRequest);
@@ -73,7 +90,7 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
       try {
-        const response = await api.get("/api/auth/me");
+        const response = await api.get("/api/auth/admin/me");
         if (mounted && response.data.user) {
           setAdmin(response.data.user);
         }
@@ -99,7 +116,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await api.post("/api/auth/login", { email, password });
+      const response = await api.post("/api/auth/admin/login", {
+        email,
+        password,
+      });
 
       if (response.data.user) {
         setAdmin(response.data.user);
@@ -107,6 +127,37 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, error: "Login failed" };
     } catch (err) {
+      // Handle specific error cases
+      if (err.response?.status === 403) {
+        const errorData = err.response.data;
+        if (errorData.code === "ADMIN_ACCOUNT_DEACTIVATED") {
+          // Clear admin session
+          setAdmin(null);
+          return {
+            success: false,
+            error:
+              errorData.message ||
+              "Your admin account has been deactivated. Please contact the system administrator.",
+            type: "admin_account_deactivated",
+          };
+        }
+      }
+
+      if (err.response?.status === 401) {
+        const errorData = err.response.data;
+        if (errorData.code === "ADMIN_ACCOUNT_DELETED") {
+          // Clear admin session
+          setAdmin(null);
+          return {
+            success: false,
+            error:
+              errorData.message ||
+              "Your admin account has been deleted. Please contact the system administrator.",
+            type: "admin_account_deleted",
+          };
+        }
+      }
+
       const errorMessage = err.response?.data?.error || "Login failed";
       return { success: false, error: errorMessage };
     }
@@ -114,7 +165,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await api.post("/api/auth/logout");
+      await api.post("/api/auth/admin/logout");
       setAdmin(null);
       toast.success("Logged out successfully");
     } catch (err) {

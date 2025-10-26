@@ -63,15 +63,15 @@ const AllOrders = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/api/orders", {
+        const response = await api.get("/api/orders/admin/all-orders", {
           params: {
             page: currentPage,
             limit,
           },
         });
-        setOrders(response.data.orders || []);
-        setTotalPages(response.data.pagination.totalPages);
-        setTotalOrders(response.data.pagination.totalOrders);
+        setOrders(response.data.data.orders || []);
+        setTotalPages(response.data.data.pagination.totalPages);
+        setTotalOrders(response.data.data.pagination.totalOrders);
       } catch (err) {
         console.error("Error fetching orders:", err);
         setError(err.response?.data?.message || "Failed to fetch orders");
@@ -90,13 +90,13 @@ const AllOrders = () => {
   const handleExport = async () => {
     try {
       setExporting(true);
-      const response = await api.get("/api/orders", {
+      const response = await api.get("/api/orders/admin/all-orders", {
         params: {
           limit: 1000,
         },
       });
 
-      const ordersToExport = response.data.orders;
+      const ordersToExport = response.data.data.orders;
       const csvData = [
         [
           "Order ID",

@@ -53,7 +53,13 @@ export const AuthProvider = ({ children }) => {
         }
 
         // If error is 401 and we haven't tried to refresh token yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Skip token refresh for login and refresh-token endpoints to prevent infinite loops
+        if (
+          error.response?.status === 401 &&
+          !originalRequest._retry &&
+          !originalRequest.url?.includes("/admin/login") &&
+          !originalRequest.url?.includes("/refresh-token")
+        ) {
           originalRequest._retry = true;
 
           try {

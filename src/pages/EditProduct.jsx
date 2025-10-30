@@ -120,6 +120,7 @@ const EditProduct = () => {
         ]);
         setCategories(catRes.data.data || []);
         const prod = prodRes.data.product;
+        console.log(prod);
         setForm({
           ...initialState,
           ...prod,
@@ -330,41 +331,57 @@ const EditProduct = () => {
       errors.featuredImage = "Featured image is required";
     if (form.images.length > 10)
       errors.images = "Maximum 10 other images allowed";
+    // Check if images are File objects (for size validation)
     if (
       form.images.some(
-        (img) => img instanceof File && img.size > 2 * 1024 * 1024
+        (img) =>
+          img &&
+          typeof img === "object" &&
+          "size" in img &&
+          img.size > 2 * 1024 * 1024
       )
     )
       errors.images = "Each image must be under 2MB";
     if (
       form.images.some(
         (img) =>
-          img instanceof File && !["image/jpeg", "image/png"].includes(img.type)
+          img &&
+          typeof img === "object" &&
+          "type" in img &&
+          !["image/jpeg", "image/png"].includes(img.type)
       )
     )
       errors.images = "Only JPG/PNG images allowed";
     if (
       form.featuredImage &&
-      form.featuredImage instanceof File &&
+      typeof form.featuredImage === "object" &&
+      "size" in form.featuredImage &&
       form.featuredImage.size > 2 * 1024 * 1024
     )
       errors.featuredImage = "Featured image must be under 2MB";
     if (
       form.featuredImage &&
-      form.featuredImage instanceof File &&
+      typeof form.featuredImage === "object" &&
+      "type" in form.featuredImage &&
       !["image/jpeg", "image/png"].includes(form.featuredImage.type)
     )
       errors.featuredImage = "Featured image must be JPG or PNG";
     if (
       form.files.some(
-        (file) => file instanceof File && file.size > 5 * 1024 * 1024
+        (file) =>
+          file &&
+          typeof file === "object" &&
+          "size" in file &&
+          file.size > 5 * 1024 * 1024
       )
     )
       errors.files = "Each file must be under 5MB";
     if (
       form.files.some(
         (file) =>
-          file instanceof File &&
+          file &&
+          typeof file === "object" &&
+          "type" in file &&
           ![
             "application/vnd.ms-excel",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

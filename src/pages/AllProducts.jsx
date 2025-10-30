@@ -187,7 +187,7 @@ const AllProducts = () => {
 
       console.log(params);
 
-      const response = await api.get("/api/products", {
+      const response = await api.get("/api/products/admin/all", {
         params,
       });
 
